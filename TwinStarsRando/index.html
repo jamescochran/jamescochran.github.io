@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Twin Stars Adventure Series I Randomizer</title>
+  <style>
+    /* Basic font settings */
+    * {
+      font-family: Arial, sans-serif;
+    }
+    body {
+      font-size: 16px;
+      margin: 20px;
+    }
+    h1 {
+      font-size: 24px;
+      margin: 0.5em 0;
+    }
+    h2 {
+      font-size: 20px;
+      margin: 0.5em 0;
+    }
+    h3 {
+      font-size: 18px;
+      margin: 0.5em 0;
+    }
+    .hidden {
+      display: none;
+    }
+    nav button {
+      margin-right: 10px;
+    }
+    table {
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+      padding: 5px;
+    }
+    label {
+      margin-right: 5px;
+    }
+    .btn-group button {
+      margin-right: 5px;
+    }
+    select {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Twin Stars Adventure Series I Randomizer</h1>
+  <nav>
+    <button id="randomizerTab">Randomizer</button>
+    <button id="historyTab">History</button>
+  </nav>
+  
+  <!-- Randomizer & Manual Selection Page -->
+  <div id="randomizerPage" class="container">
+    <h2>Generate or Choose a Combination</h2>
+    <button id="generateBtn">Randomize Combination</button>
+    <div style="border:1px solid #ccc; padding:10px; margin-top:10px;">
+      <h3>Or choose your own combination:</h3>
+      <label for="manualChar1">Character 1:</label>
+      <select id="manualChar1"></select>
+      <br>
+      <label for="manualChar2">Character 2:</label>
+      <select id="manualChar2"></select>
+      <br>
+      <label for="manualScenario">Scenario:</label>
+      <select id="manualScenario"></select>
+      <br>
+      <button id="loadManualCombo">Load Manual Combination</button>
+    </div>
+    
+    <!-- Displayed combination details -->
+    <div id="combinationDisplay" style="margin-top:20px;"></div>
+    
+    <!-- Outcome annotation (record new result) -->
+    <div id="annotationSection" class="hidden">
+      <h3>Record Outcome</h3>
+      <label for="result">Result:</label>
+      <select id="result">
+        <option value="Win">Win</option>
+        <option value="Loss">Loss</option>
+      </select>
+      <br><br>
+      <label for="difficulty">Difficulty:</label>
+      <select id="difficulty">
+        <option value="Easy">Easy</option>
+        <option value="Medium">Medium</option>
+        <option value="Hard">Hard</option>
+      </select>
+      <br><br>
+      <button id="saveRecordBtn">Save Record</button>
+    </div>
+    
+    <!-- History for the current combo (shown at the bottom) -->
+    <div id="comboHistory"></div>
+  </div>
+  
+  <!-- Complete History Page -->
+  <div id="historyPage" class="container hidden">
+    <h2>Complete History</h2>
+    <div class="btn-group">
+      <button id="exportBtn">Export Data</button>
+      <input type="file" id="importFile" accept=".json">
+      <button id="importBtn">Import Data</button>
+      <button id="clearDataBtn">Clear Data</button>
+    </div>
+    <div id="historyTableContainer"></div>
+  </div>
+  
+  <script>
+    // Data arrays
+    const characters = [
+      "Bood", "Stag Solar", "Fanoobia", "Inpon Gol", 
+      "Grant Rockgardner", "Roux Jaezmina", "Yanfred Jima", 
+      "Saale", "Infill Mey", "Strezelsior", "Kinglan", "Brenimov-X"
+    ];
+    const scenarios = [
+      "Escape The Brig!",
+      "Rule The World!",
+      "Stop The Virus!",
+      "Hunt The Bounty!",
+      "Steal The Plans!",
+      "Confine The Quarks!"
+    ];
+    
+    let currentCombination = null;
+    let records = JSON.parse(localStorage.getItem("gameRecords")) || [];
+    
+    function saveRecords() {
+      localStorage.setItem("gameRecords", JSON.stringify(records));
+    }
+    
+    function clearRecords() {
+      records = [];
+      saveRecords();
+      displayHistory();
+      if (currentCombination) displayComboHistory(currentCombination);
+      alert("All records cleared.");
+    }
+    
+    // Generate a random combination with sorted characters
+    function randomCombination() {
+      const shuffled = [...characters].sort(() => Math.random() - 0.5);
+      const selectedCharacters = shuffled.slice(0, 2).sort();
+      const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+      return { characters: selectedCharacters, scenario: scenario };
+    }
+    
+    // Return a string of difficulty icons without punctuation,
+    // joined by spaces. If any win exists for that difficulty, it returns a check.
+    function getDifficultyIcons(comb) {
+      const difficulties = ["Easy", "Medium", "Hard"];
+      const comboKey = comb.characters.join("|") + "-" + comb.scenario;
+      let iconsStr = [];
+      
+      difficulties.forEach(diff => {
+        const filtered = records.filter(r => {
+          const recKey = r.characters.slice().sort().join("|") + "-" + r.scenario;
+          return recKey === comboKey && r.difficulty === diff;
+        });
+        let icon = "⏺️"; // Not played
+        if (filtered.length > 0) {
+          const wins = filtered.filter(r => r.result === "Win").length;
+          const losses = filtered.filter(r => r.result === "Loss").length;
+          if (wins > 0) {
+            icon = "✅";
+          } else if (losses > 0) {
+            icon = "❌";
+          }
+        }
+        iconsStr.push(`${diff}: ${icon}`);
+      });
+      
+      return iconsStr.join(" ");
+    }
+    
+    function displayCombination(comb) {
+      const displayDiv = document.getElementById("combinationDisplay");
+      const difficultyIcons = getDifficultyIcons(comb);
+      displayDiv.innerHTML = `
+        <p><strong>Characters:</strong> ${comb.characters.join(" & ")}</p>
+        <p><strong>Scenario:</strong> ${comb.scenario}</p>
+        <p>${difficultyIcons}</p>
+      `;
+    }
+    
+    // Display combo history with a header showing the current combo details
+    function displayComboHistory(comb) {
+      const comboHistoryDiv = document.getElementById("comboHistory");
+      let header = `<h3>Combo: ${comb.characters.join(" & ")} / ${comb.scenario}</h3>`;
+      
+      const comboKey = comb.characters.join("|") + "-" + comb.scenario;
+      const comboRecords = records.filter(r => {
+        const recKey = r.characters.slice().sort().join("|") + "-" + r.scenario;
+        return recKey === comboKey;
+      });
+      
+      if (comboRecords.length === 0) {
+        comboHistoryDiv.innerHTML = header + "<p>No history for this combination yet.</p>";
+      } else {
+        let html = header + `
+          <h4>History for this combination:</h4>
+          <table>
+            <tr>
+              <th>Date/Time</th>
+              <th>Result</th>
+              <th>Difficulty</th>
+            </tr>`;
+        comboRecords.forEach(rec => {
+          html += `
+            <tr>
+              <td>${rec.timestamp}</td>
+              <td>${rec.result}</td>
+              <td>${rec.difficulty}</td>
+            </tr>`;
+        });
+        html += "</table>";
+        comboHistoryDiv.innerHTML = html;
+      }
+    }
+    
+    function displayHistory() {
+      const container = document.getElementById("historyTableContainer");
+      if (records.length === 0) {
+        container.innerHTML = "<p>No records available.</p>";
+        return;
+      }
+      let html = `
+        <table>
+          <tr>
+            <th>Date/Time</th>
+            <th>Characters</th>
+            <th>Scenario</th>
+            <th>Result</th>
+            <th>Difficulty</th>
+          </tr>`;
+      records.forEach(rec => {
+        html += `
+          <tr>
+            <td>${rec.timestamp}</td>
+            <td>${rec.characters.join(" & ")}</td>
+            <td>${rec.scenario}</td>
+            <td>${rec.result}</td>
+            <td>${rec.difficulty}</td>
+          </tr>`;
+      });
+      html += "</table>";
+      container.innerHTML = html;
+    }
+    
+    // --- Event Handlers ---
+    function handleGenerate() {
+      currentCombination = randomCombination();
+      displayCombination(currentCombination);
+      displayComboHistory(currentCombination);
+      document.getElementById("annotationSection").classList.remove("hidden");
+    }
+    
+    function handleLoadManualCombo() {
+      const char1 = document.getElementById("manualChar1").value;
+      const char2 = document.getElementById("manualChar2").value;
+      const scenario = document.getElementById("manualScenario").value;
+      if (char1 === char2) {
+        alert("Please select two different characters.");
+        return;
+      }
+      currentCombination = { characters: [char1, char2].sort(), scenario: scenario };
+      displayCombination(currentCombination);
+      displayComboHistory(currentCombination);
+      document.getElementById("annotationSection").classList.remove("hidden");
+    }
+    
+    function handleSaveRecord() {
+      if (!currentCombination) return;
+      const result = document.getElementById("result").value;
+      const difficulty = document.getElementById("difficulty").value;
+      const timestamp = new Date().toLocaleString();
+      records.push({
+        characters: currentCombination.characters,
+        scenario: currentCombination.scenario,
+        result,
+        difficulty,
+        timestamp
+      });
+      saveRecords();
+      alert("Record saved!");
+      // Redisplay updated info
+      displayCombination(currentCombination);
+      displayComboHistory(currentCombination);
+    }
+    
+    function handleExport() {
+      const dataStr = JSON.stringify(records, null, 2);
+      const blob = new Blob([dataStr], {type: "application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "gameRecords.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    
+    function handleImport() {
+      const fileInput = document.getElementById("importFile");
+      if (fileInput.files.length === 0) {
+        alert("Please select a file to import.");
+        return;
+      }
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const importedRecords = JSON.parse(e.target.result);
+          if (Array.isArray(importedRecords)) {
+            records = importedRecords;
+            saveRecords();
+            displayHistory();
+            if (currentCombination) displayComboHistory(currentCombination);
+            alert("Data imported successfully!");
+          } else {
+            alert("Invalid data format.");
+          }
+        } catch (error) {
+          alert("Error reading file: " + error);
+        }
+      };
+      reader.readAsText(file);
+    }
+    
+    // Populate dropdowns for manual selection
+    function populateManualSelectors() {
+      const manualChar1 = document.getElementById("manualChar1");
+      const manualChar2 = document.getElementById("manualChar2");
+      const manualScenario = document.getElementById("manualScenario");
+      
+      characters.forEach(char => {
+        const opt1 = document.createElement("option");
+        opt1.value = char;
+        opt1.textContent = char;
+        manualChar1.appendChild(opt1);
+        
+        const opt2 = document.createElement("option");
+        opt2.value = char;
+        opt2.textContent = char;
+        manualChar2.appendChild(opt2);
+      });
+      
+      scenarios.forEach(sc => {
+        const opt = document.createElement("option");
+        opt.value = sc;
+        opt.textContent = sc;
+        manualScenario.appendChild(opt);
+      });
+    }
+    
+    // Tab switching
+    function showTab(tab) {
+      document.getElementById("randomizerPage").classList.toggle("hidden", tab !== "randomizer");
+      document.getElementById("historyPage").classList.toggle("hidden", tab !== "history");
+      if (tab === "history") {
+        displayHistory();
+      }
+    }
+    
+    // Attach listeners
+    document.getElementById("generateBtn").addEventListener("click", handleGenerate);
+    document.getElementById("loadManualCombo").addEventListener("click", handleLoadManualCombo);
+    document.getElementById("saveRecordBtn").addEventListener("click", handleSaveRecord);
+    document.getElementById("exportBtn").addEventListener("click", handleExport);
+    document.getElementById("importBtn").addEventListener("click", handleImport);
+    document.getElementById("clearDataBtn").addEventListener("click", clearRecords);
+    document.getElementById("randomizerTab").addEventListener("click", () => showTab("randomizer"));
+    document.getElementById("historyTab").addEventListener("click", () => showTab("history"));
+    
+    // Initialize
+    populateManualSelectors();
+    displayHistory();
+  </script>
+</body>
+</html>
+
