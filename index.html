@@ -3,224 +3,179 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>THE James Dean Cochran</title>
+  <title>James Cochran</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg-deep:      #07091a;
-      --bg-panel:     #0e1228;
-      --border:       #1e2d55;
-      --border-glow:  #2a4a8a;
-      --accent-orange:#ff6b35;
-      --accent-teal:  #00d4aa;
-      --accent-yellow:#f0b429;
-      --text-primary: #e8eaf6;
-      --text-muted:   #7a88b0;
-      --text-dim:     #3e4f78;
-      --seafoam:      #6aab96;
+      --bg:        #0a0a0c;
+      --surface:   #111116;
+      --border:    rgba(255,255,255,0.07);
+      --text:      #e2e2e8;
+      --muted:     #5a5a6e;
+      --accent:    #8b9fc4;
+      --accent-dim:rgba(139,159,196,0.15);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+    }
 
     body {
-      background-color: var(--bg-deep);
-      color: var(--text-primary);
-      font-family: 'Exo 2', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
       font-size: 15px;
-      min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      overflow-x: hidden;
+      min-height: 100vh;
+      padding: 40px 20px;
     }
 
-    /* Starfield */
-    body::before {
+    /* Subtle vignette */
+    body::after {
       content: '';
       position: fixed;
       inset: 0;
-      background-image:
-        radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.5) 0%, transparent 100%),
-        radial-gradient(1px 1px at 30% 55%, rgba(255,255,255,0.3) 0%, transparent 100%),
-        radial-gradient(1px 1px at 55% 10%, rgba(255,255,255,0.4) 0%, transparent 100%),
-        radial-gradient(1px 1px at 70% 75%, rgba(255,255,255,0.3) 0%, transparent 100%),
-        radial-gradient(1px 1px at 85% 35%, rgba(255,255,255,0.5) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 20% 85%, rgba(200,210,255,0.4) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 60% 45%, rgba(200,210,255,0.3) 0%, transparent 100%),
-        radial-gradient(1px 1px at 92% 60%, rgba(255,255,255,0.4) 0%, transparent 100%),
-        radial-gradient(1px 1px at 45% 90%, rgba(255,255,255,0.2) 0%, transparent 100%),
-        radial-gradient(1px 1px at 5%  50%, rgba(255,255,255,0.3) 0%, transparent 100%);
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
       pointer-events: none;
       z-index: 0;
     }
 
-    .card {
+    .wrap {
       position: relative;
       z-index: 1;
-      background: var(--bg-panel);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 48px 40px;
-      max-width: 420px;
-      width: 90%;
-      text-align: center;
-      animation: fadeIn 0.4s ease;
+      width: 100%;
+      max-width: 380px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      animation: rise 0.6s ease both;
     }
 
     /* Avatar */
     .avatar {
-      width: 96px;
-      height: 96px;
+      width: 72px;
+      height: 72px;
       border-radius: 50%;
-      border: 2px solid var(--border-glow);
       object-fit: cover;
-      margin-bottom: 24px;
+      filter: grayscale(20%) brightness(0.9);
+      border: 1px solid var(--border);
+      margin-bottom: 28px;
+      transition: filter 0.3s;
     }
+    .avatar:hover { filter: grayscale(0%) brightness(1); }
 
     /* Name */
-    .byline {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 10px;
-      font-weight: 400;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--text-dim);
-      margin-bottom: 4px;
-    }
     h1 {
-      font-family: 'Orbitron', sans-serif;
-      font-size: clamp(20px, 5vw, 26px);
-      font-weight: 900;
-      letter-spacing: 3px;
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: clamp(28px, 7vw, 38px);
+      letter-spacing: 6px;
       text-transform: uppercase;
-      line-height: 1.1;
-      margin-bottom: 6px;
-    }
-    h1 .the {
-      color: var(--seafoam);
-      font-style: italic;
-    }
-    .tagline {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-bottom: 32px;
-      line-height: 1.6;
+      color: var(--text);
+      margin-bottom: 8px;
+      text-align: center;
     }
 
-    /* Divider */
-    .rule {
-      width: 60px;
-      height: 2px;
-      background: linear-gradient(90deg, var(--accent-orange), var(--accent-teal));
-      margin: 0 auto 32px;
-      border-radius: 2px;
+    .divider {
+      width: 32px;
+      height: 1px;
+      background: var(--muted);
+      margin: 0 auto 28px;
     }
 
     /* Links */
     .links {
+      width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-    }
-    .link-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
       gap: 10px;
-      padding: 13px 20px;
-      border-radius: 8px;
+      margin-bottom: 48px;
+    }
+
+    .link-btn {
+      display: block;
+      width: 100%;
+      padding: 14px 20px;
+      text-align: center;
       text-decoration: none;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 2px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      font-size: 11px;
+      letter-spacing: 3px;
       text-transform: uppercase;
-      transition: all 0.18s;
+      color: var(--muted);
       border: 1px solid var(--border);
-      color: var(--text-muted);
+      border-radius: 2px;
       background: transparent;
+      transition: all 0.22s;
     }
+
     .link-btn:hover {
-      transform: translateY(-2px);
-      border-color: var(--border-glow);
-      color: var(--text-primary);
+      color: var(--text);
+      border-color: rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.03);
     }
-    .link-btn.featured {
-      border-color: var(--accent-orange);
-      color: var(--accent-orange);
+
+    .link-btn.primary {
+      color: var(--accent);
+      border-color: rgba(139,159,196,0.25);
+      background: var(--accent-dim);
     }
-    .link-btn.featured:hover {
-      background: rgba(255,107,53,0.1);
-      border-color: var(--accent-orange);
-      color: var(--accent-orange);
-    }
-    .link-btn.teal {
-      border-color: var(--accent-teal);
-      color: var(--accent-teal);
-    }
-    .link-btn.teal:hover {
-      background: rgba(0,212,170,0.1);
-    }
-    .link-btn.yellow:hover {
-      border-color: var(--accent-yellow);
-      color: var(--accent-yellow);
-    }
-    .link-btn.sky:hover {
-      border-color: #0085ff;
-      color: #0085ff;
-    }
-    .link-btn.coffee:hover {
-      border-color: var(--accent-orange);
-      color: var(--accent-orange);
+    .link-btn.primary:hover {
+      background: rgba(139,159,196,0.22);
+      border-color: rgba(139,159,196,0.4);
+      color: #b8c8e4;
     }
 
     /* Footer */
-    .page-footer {
-      margin-top: 28px;
+    footer {
       font-size: 11px;
-      color: var(--text-dim);
-      letter-spacing: 1px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      opacity: 0.5;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
       to   { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
 
-<div class="card">
+<div class="wrap">
+
   <img
     class="avatar"
     src="https://cdn.bsky.app/img/avatar/plain/did:plc:z73hvtpl2mmrsjvqaxfslx5g/bafkreic4lsmg66znie7x5kbabcmeh44ayeajthed6oo4afq7qxeuluyxeu@jpeg"
-    alt="James Dean Cochran"
+    alt="James Cochran"
   >
 
-  <p class="byline">Made with love</p>
-  <h1><span class="the">THE</span><br>James Dean Cochran</h1>
-  <p class="tagline">Board game lover.<br>Maker of small things.</p>
-
-  <div class="rule"></div>
+  <h1>James Cochran</h1>
+  <div class="divider"></div>
 
   <div class="links">
-    <a href="https://jamescochran.github.io/TwinStarsRando/" class="link-btn featured teal">
-      ⬡ Twin Stars Randomizer
+    <a href="https://jamescochran.github.io/TwinStarsRando/" class="link-btn primary">
+      Twin Stars Randomizer
     </a>
-    <a href="https://discord.gg/aUBMvnu" class="link-btn yellow">
-      Button Shy Discord
-    </a>
-    <a href="https://bsky.app/profile/jamescochran.bsky.social" class="link-btn sky">
+    <a href="https://bsky.app/profile/jamescochran.bsky.social" class="link-btn">
       Bluesky
     </a>
-    <a href="https://ko-fi.com/jamescochran" class="link-btn coffee">
-      Buy Me a Coffee
-    </a>
-    <a href="https://boardgamegeek.com/boardgame/211988/hot-dogs" class="link-btn">
-      Send Me Hot Dogs
+    <a href="https://ko-fi.com/jamescochran" class="link-btn">
+      Ko-fi
     </a>
   </div>
+
+  <footer>&copy; James Cochran</footer>
 
 </div>
 
