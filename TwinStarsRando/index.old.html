@@ -4,12 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Twin Stars Adventure Series I — Randomizer</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#07091a">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Twin Stars">
-  <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
@@ -1143,13 +1137,6 @@
   document.getElementById("historyTab")     .addEventListener("click", () => showTab("history"));
 
   populateSelectors();
-
-  // Register service worker for PWA installation
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("service-worker.js").catch(() => {});
-    });
-  }
 </script>
 </body>
 </html>
