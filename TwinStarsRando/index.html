@@ -459,11 +459,87 @@
       padding: 10px 14px;
       border-radius: 6px;
       font-size: 12px;
-      color: var(--accent-teal);
-      background: rgba(0,212,170,0.08);
-      border: 1px solid rgba(0,212,170,0.2);
+      color: var(--text-muted);
+      background: rgba(122,136,176,0.08);
+      border: 1px solid rgba(122,136,176,0.2);
       margin-bottom: 14px;
     }
+
+    /* + Manual Selection ghost button */
+    .btn-manual-show {
+      display: none;
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 1px dashed var(--border-glow);
+      border-radius: 8px;
+      color: var(--text-dim);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 16px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-manual-show:hover { border-color: var(--accent-teal); color: var(--accent-teal); }
+    .btn-manual-show.visible { display: block; }
+
+    /* Play count badge on combo card */
+    .combo-play-count {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+    .combo-play-count span {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    /* Unplayed combos section */
+    .unplayed-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .unplayed-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      gap: 10px;
+    }
+    .unplayed-item-text { color: var(--text-muted); flex: 1; line-height: 1.4; }
+    .unplayed-item-scenario { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+    .btn-load-unplayed {
+      background: transparent;
+      border: 1px solid var(--border-glow);
+      color: var(--accent-teal);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.18s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-load-unplayed:hover { background: rgba(0,212,170,0.1); border-color: var(--accent-teal); }
 
     /* Modal */
     .modal-overlay {
@@ -649,10 +725,17 @@
 
     <div class="panel">
       <p class="panel-title">Random Mission</p>
-      <button class="btn btn-primary" id="generateBtn">⬡ Randomize Combination</button>
+      <button class="btn btn-primary" id="generateBtn">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+          <path d="M7 1L12.196 4V10L7 13L1.804 10V4L7 1Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/>
+        </svg>
+        Randomize Combination
+      </button>
     </div>
 
-    <div class="panel">
+    <button class="btn-manual-show" id="manualShowBtn">+ Manual Selection</button>
+
+    <div class="panel" id="manualPanel">
       <p class="panel-title">Manual Selection</p>
       <div class="form-row-inline">
         <div class="form-row form-row-flush">
@@ -712,6 +795,10 @@
         <button class="btn btn-danger" id="clearDataBtn">Clear All</button>
       </div>
       <div id="historyTableContainer"></div>
+    </div>
+    <div class="panel">
+      <p class="panel-title">Unplayed Combinations</p>
+      <div id="unplayedContainer"></div>
     </div>
   </div>
 
@@ -934,12 +1021,17 @@
   let currentCombination = null;
 
   function displayCombination(comb) {
+    const key       = comboKey(comb);
+    const playCount = records.filter(r => comboKey(r) === key).length;
+    const countText = playCount === 0 ? "Never played" : playCount === 1 ? "Played 1 time" : `Played ${playCount} times`;
+
     document.getElementById("combinationDisplay").innerHTML = `
       <div class="combo-display">
         <div class="combo-characters">
           ${esc(comb.characters[0])}<span class="combo-vs">&amp;</span>${esc(comb.characters[1])}
         </div>
         <div class="combo-scenario">${esc(comb.scenario)}</div>
+        <div class="combo-play-count"><span>${esc(countText)}</span></div>
         <div class="difficulty-row">${renderDiffBadges(comb)}</div>
         <div class="timer-row">
           <div>
@@ -986,6 +1078,66 @@
       </div>`;
   }
 
+  function displayUnplayed() {
+    const container = document.getElementById("unplayedContainer");
+    const playedKeys = new Set(records.map(r => comboKey(r)));
+
+    const unplayed = [];
+    for (let i = 0; i < characters.length; i++) {
+      for (let j = i + 1; j < characters.length; j++) {
+        for (const scenario of scenarios) {
+          const comb = { characters: [characters[i], characters[j]], scenario };
+          if (!playedKeys.has(comboKey(comb))) unplayed.push(comb);
+        }
+      }
+    }
+
+    if (!unplayed.length) {
+      container.innerHTML = `<div class="empty-state"><p>You've played every combination. Incredible!</p></div>`;
+      return;
+    }
+
+    const total = characters.length * (characters.length - 1) / 2 * scenarios.length;
+    const played = total - unplayed.length;
+
+    let html = `<p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">
+      <span style="color:var(--accent-teal);font-weight:700;">${played}</span> of <span style="font-weight:700;">${total}</span> combinations played
+    </p><div class="unplayed-grid">`;
+
+    unplayed.slice(0, 20).forEach(comb => {
+      html += `
+        <div class="unplayed-item">
+          <div class="unplayed-item-text">
+            <div>${esc(comb.characters.join(" & "))}</div>
+            <div class="unplayed-item-scenario">${esc(comb.scenario)}</div>
+          </div>
+          <button class="btn-load-unplayed"
+            data-chars="${esc(comb.characters.join("|"))}"
+            data-scenario="${esc(comb.scenario)}">
+            Play
+          </button>
+        </div>`;
+    });
+
+    if (unplayed.length > 20) {
+      html += `<p style="font-size:12px;color:var(--text-dim);text-align:center;padding:8px 0;">
+        …and ${unplayed.length - 20} more
+      </p>`;
+    }
+
+    html += "</div>";
+    container.innerHTML = html;
+
+    container.querySelectorAll(".btn-load-unplayed").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const chars    = btn.dataset.chars.split("|");
+        const scenario = btn.dataset.scenario;
+        showTab("randomizer");
+        loadCombination({ characters: chars, scenario });
+      });
+    });
+  }
+
   function displayHistory() {
     const container = document.getElementById("historyTableContainer");
     if (!records.length) {
@@ -1028,6 +1180,22 @@
     syncDropdown("manualChar1", "manualChar2");
     c2.value = comb.characters[1];
     sc.value = comb.scenario;
+
+    // Smooth scroll to combo card on mobile
+    setTimeout(() => {
+      const el = document.getElementById("combinationDisplay");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+  }
+
+  function hideManualPanel() {
+    document.getElementById("manualPanel").classList.add("hidden");
+    document.getElementById("manualShowBtn").classList.add("visible");
+  }
+
+  function showManualPanel() {
+    document.getElementById("manualPanel").classList.remove("hidden");
+    document.getElementById("manualShowBtn").classList.remove("visible");
   }
 
   function handleGenerate() {
@@ -1036,6 +1204,7 @@
       characters: shuffled.slice(0, 2).sort(),
       scenario:   scenarios[Math.floor(Math.random() * scenarios.length)]
     });
+    hideManualPanel();
   }
 
   function handleLoadManualCombo() {
@@ -1048,15 +1217,19 @@
 
   function handleSaveRecord() {
     if (!currentCombination) return;
+    const result     = document.getElementById("result").value;
+    const difficulty = document.getElementById("difficulty").value;
     stopTimer();
     records.push({
       characters: currentCombination.characters,
       scenario:   currentCombination.scenario,
-      result:     document.getElementById("result").value,
-      difficulty: document.getElementById("difficulty").value,
+      result,
+      difficulty,
       playtime:   timerSeconds,
       timestamp:  new Date().toLocaleString()
     });
+    // Remember last used values for next save
+    try { localStorage.setItem("lastResult", result); localStorage.setItem("lastDifficulty", difficulty); } catch(e) {}
     saveRecords();
     displayCombination(currentCombination);
     startTimer();
@@ -1066,11 +1239,12 @@
 
   function handleExport() {
     if (!records.length) { toast("No records to export.", "error"); return; }
-    const blob = new Blob([JSON.stringify(records, null, 2)], { type: "application/json" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url;
-    a.download = "twin_stars_records.json";
+    const date     = new Date().toISOString().slice(0, 10);
+    const blob     = new Blob([JSON.stringify(records, null, 2)], { type: "application/json" });
+    const url      = URL.createObjectURL(blob);
+    const a        = document.createElement("a");
+    a.href         = url;
+    a.download     = `twin_stars_records_${date}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1130,17 +1304,26 @@
     document.getElementById("historyPage")   .classList.toggle("hidden", tab !== "history");
     document.getElementById("randomizerTab") .classList.toggle("active", tab === "randomizer");
     document.getElementById("historyTab")    .classList.toggle("active", tab === "history");
-    if (tab === "history") displayHistory();
+    if (tab === "history") { displayHistory(); displayUnplayed(); }
   }
 
   // ─── Init ───────────────────────────────────────────────────────────────────
 
   document.getElementById("generateBtn")    .addEventListener("click", handleGenerate);
+  document.getElementById("manualShowBtn")  .addEventListener("click", showManualPanel);
   document.getElementById("loadManualCombo").addEventListener("click", handleLoadManualCombo);
   document.getElementById("saveRecordBtn")  .addEventListener("click", handleSaveRecord);
   document.getElementById("exportBtn")      .addEventListener("click", handleExport);
   document.getElementById("randomizerTab")  .addEventListener("click", () => showTab("randomizer"));
   document.getElementById("historyTab")     .addEventListener("click", () => showTab("history"));
+
+  // Restore last used result and difficulty
+  try {
+    const lastResult     = localStorage.getItem("lastResult");
+    const lastDifficulty = localStorage.getItem("lastDifficulty");
+    if (lastResult)     document.getElementById("result").value     = lastResult;
+    if (lastDifficulty) document.getElementById("difficulty").value = lastDifficulty;
+  } catch(e) {}
 
   populateSelectors();
 
