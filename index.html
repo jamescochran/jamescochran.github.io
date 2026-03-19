@@ -1,9 +1,228 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>THE James Dean Cochran</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep:      #07091a;
+      --bg-panel:     #0e1228;
+      --border:       #1e2d55;
+      --border-glow:  #2a4a8a;
+      --accent-orange:#ff6b35;
+      --accent-teal:  #00d4aa;
+      --accent-yellow:#f0b429;
+      --text-primary: #e8eaf6;
+      --text-muted:   #7a88b0;
+      --text-dim:     #3e4f78;
+      --seafoam:      #6aab96;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-deep);
+      color: var(--text-primary);
+      font-family: 'Exo 2', sans-serif;
+      font-size: 15px;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    /* Starfield */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 30% 55%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 55% 10%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 70% 75%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 85% 35%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 20% 85%, rgba(200,210,255,0.4) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 60% 45%, rgba(200,210,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 92% 60%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 45% 90%, rgba(255,255,255,0.2) 0%, transparent 100%),
+        radial-gradient(1px 1px at 5%  50%, rgba(255,255,255,0.3) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 40px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      animation: fadeIn 0.4s ease;
+    }
+
+    /* Avatar */
+    .avatar {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      border: 2px solid var(--border-glow);
+      object-fit: cover;
+      margin-bottom: 24px;
+    }
+
+    /* Name */
+    .byline {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px;
+      font-weight: 400;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(20px, 5vw, 26px);
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    h1 .the {
+      color: var(--seafoam);
+      font-style: italic;
+    }
+    .tagline {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    /* Divider */
+    .rule {
+      width: 60px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-orange), var(--accent-teal));
+      margin: 0 auto 32px;
+      border-radius: 2px;
+    }
+
+    /* Links */
+    .links {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .link-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 13px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: all 0.18s;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      background: transparent;
+    }
+    .link-btn:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-glow);
+      color: var(--text-primary);
+    }
+    .link-btn.featured {
+      border-color: var(--accent-orange);
+      color: var(--accent-orange);
+    }
+    .link-btn.featured:hover {
+      background: rgba(255,107,53,0.1);
+      border-color: var(--accent-orange);
+      color: var(--accent-orange);
+    }
+    .link-btn.teal {
+      border-color: var(--accent-teal);
+      color: var(--accent-teal);
+    }
+    .link-btn.teal:hover {
+      background: rgba(0,212,170,0.1);
+    }
+    .link-btn.yellow:hover {
+      border-color: var(--accent-yellow);
+      color: var(--accent-yellow);
+    }
+    .link-btn.sky:hover {
+      border-color: #0085ff;
+      color: #0085ff;
+    }
+    .link-btn.coffee:hover {
+      border-color: var(--accent-orange);
+      color: var(--accent-orange);
+    }
+
+    /* Footer */
+    .page-footer {
+      margin-top: 28px;
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
 <body>
 
-<h1>My First Heading</h1>
-<p>My first paragraph.</p>
-<a href=Recipes>
+<div class="card">
+  <img
+    class="avatar"
+    src="https://cdn.bsky.app/img/avatar/plain/did:plc:z73hvtpl2mmrsjvqaxfslx5g/bafkreic4lsmg66znie7x5kbabcmeh44ayeajthed6oo4afq7qxeuluyxeu@jpeg"
+    alt="James Dean Cochran"
+  >
+
+  <p class="byline">Made with love</p>
+  <h1><span class="the">THE</span><br>James Dean Cochran</h1>
+  <p class="tagline">Board game lover.<br>Maker of small things.</p>
+
+  <div class="rule"></div>
+
+  <div class="links">
+    <a href="https://jamescochran.github.io/TwinStarsRando/" class="link-btn featured teal">
+      ⬡ Twin Stars Randomizer
+    </a>
+    <a href="https://discord.gg/aUBMvnu" class="link-btn yellow">
+      Button Shy Discord
+    </a>
+    <a href="https://bsky.app/profile/jamescochran.bsky.social" class="link-btn sky">
+      Bluesky
+    </a>
+    <a href="https://ko-fi.com/jamescochran" class="link-btn coffee">
+      Buy Me a Coffee
+    </a>
+    <a href="https://boardgamegeek.com/boardgame/211988/hot-dogs" class="link-btn">
+      Send Me Hot Dogs
+    </a>
+  </div>
+
+</div>
+
 </body>
 </html>
