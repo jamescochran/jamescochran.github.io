@@ -1,15 +1,13 @@
 # Twin Stars Randomizer — Security & Risk Document
 
-**Applies to: v1.0.3 (single HTML file, local distribution)**
+**Applies to: v1.1.4+**
 **Audience: Developers maintaining or extending this codebase**
 
 ---
 
 ## Overview
 
-This app has an unusually low threat surface. It runs as a local HTML file opened directly in the browser, has no server, no user accounts, no network requests beyond Google Fonts, and stores only game records. It is not a web application in the traditional sense. Most standard web security concerns do not apply here.
-
-That said, there are a small number of real considerations worth understanding.
+This app has an unusually low threat surface. It runs as a hosted PWA with no server, no user accounts, no network requests, and stores only game records locally. Most standard web security concerns do not apply here.
 
 ---
 
@@ -17,13 +15,13 @@ That said, there are a small number of real considerations worth understanding.
 
 ### 1. localStorage — Data Storage
 
-**What it is:** All game records are stored in the browser's localStorage under the key `"gameRecords"` as a JSON string.
+**What it is:** All game records are stored in the browser's localStorage under the key `"gameRecords"` as a JSON string. Enabled content packs are stored under `"enabledPacks"`.
 
 **Risks:**
-- localStorage is readable by any JavaScript running on the same origin. Since this is a `file://` origin, only this file can read it — no other website can access it.
-- localStorage is not encrypted. Anyone with physical access to the machine and browser can read the records via the browser's developer tools.
-- If localStorage becomes full (typically 5–10MB depending on the browser), writes will fail. The app catches this and shows an error toast rather than crashing silently.
-- If the stored JSON is corrupted (e.g., manually edited incorrectly), the app catches the parse error on load and starts with an empty record set rather than crashing.
+- localStorage is readable by any JavaScript running on the same origin.
+- localStorage is not encrypted. Anyone with physical access to the machine and browser can read the records via developer tools.
+- If localStorage becomes full (typically 5–10MB), writes will fail. The app catches this and shows an error toast rather than crashing silently.
+- If the stored JSON is corrupted, the app catches the parse error on load and starts with an empty state rather than crashing.
 
 **Verdict:** Low risk for this use case. Records are game scores, not sensitive personal data.
 
@@ -43,7 +41,7 @@ function esc(str) {
 }
 ```
 
-**Where this matters most — import:** When a user imports a JSON file, those records are passed through `isValidRecord()` before being accepted. This function checks that every field matches known-good values from the game's fixed data sets. A record with a character name of `<script>alert('xss')</script>` would be rejected entirely, not escaped-and-displayed.
+**Where this matters most — import:** When a user imports a JSON file, those records are passed through `isValidRecord()` before being accepted. This function checks that every field matches known-good values from `ALL_CHARACTERS_SET` and `ALL_SCENARIOS_SET`, which include every character and scenario across all content packs. A record with a character name of `<script>alert('xss')</script>` would be rejected entirely, not escaped-and-displayed.
 
 **Residual risk:** The `timestamp` field is accepted from imported records as a plain string without format validation. It is escaped via `esc()` before rendering, so it cannot execute code — but a malicious file could cause a weird-looking timestamp to appear in the history table. This is cosmetic only.
 
@@ -53,7 +51,7 @@ function esc(str) {
 
 ### 3. File Import — Malicious JSON
 
-**What it is:** The user can import a `.json` file to replace their records.
+**What it is:** The user can import a `.json` file to restore their records.
 
 **Risks:**
 - A malicious actor could craft a JSON file and convince the user to import it.
@@ -65,26 +63,15 @@ function esc(str) {
 - The import replaces the current records entirely — this is intentional and expected behavior, but it means a bad import wipes existing data. Users should export before importing if they want to preserve history.
 - The file is read as text and parsed as JSON. A non-JSON file will throw a parse error, which is caught and shown as a toast.
 
-**Important — expansion content:** `isValidRecord()` currently validates characters and scenarios against the Series I data set only. When Series II, III, Captain Crag, or any other content is added to the app, the `CHARACTER_SET` and `SCENARIO_SET` constants in the JavaScript must be updated to include the new values. If they are not updated, records from those series will pass silently through the import as invalid and be dropped, with no explanation beyond the skipped count in the toast.
-
-**Verdict:** Low risk. Validation is strict. The only realistic attack scenario is a user being socially engineered into importing a file that wipes their records — the data itself (game scores) has no value to an attacker.
+**Verdict:** Low risk. Validation is strict. The only realistic attack scenario is a user being socially engineered into importing a file that wipes their records — the data itself has no value to an attacker.
 
 ---
 
-### 4. Google Fonts — External Dependency and Privacy
+### 4. Fonts — No External Dependency
 
-**What it is:** The app loads Orbitron and Exo 2 from `fonts.googleapis.com`.
+Both fonts (Orbitron and Exo 2) are embedded as base64 `@font-face` data URIs directly in the HTML. The app makes no external network requests for fonts. There is no Google Fonts dependency, no IP address exposure to third parties, and no dependency on external availability.
 
-**Risks:**
-- This is the only external network request the app makes.
-- When the browser fetches the fonts, Google receives the user's IP address, browser user agent, and referrer. This is standard for any Google Fonts usage and is governed by Google's privacy policy.
-- If Google Fonts is unavailable (offline, blocked, or service outage), the app falls back to system fonts and shows a notice to the user.
-- Google could theoretically change or remove the font files. This would not break the app's functionality, only its appearance.
-
-**Mitigation options:**
-- Fonts could be embedded as base64 to eliminate this dependency entirely. This was explored and is technically feasible but adds ~200–300KB to the file size. It remains an option for a future version.
-
-**Verdict:** Known and accepted tradeoff. No user credentials or game data are transmitted. The only exposure is the IP address, which is unavoidable for any internet request.
+**Verdict:** Fully resolved. No network exposure from fonts.
 
 ---
 
@@ -112,11 +99,25 @@ function esc(str) {
 
 **What it is:** Combinations are identified by a string key in the format `char1|char2-scenario`.
 
-**Risk:** If a character name or scenario name ever contained the characters `|` or `-`, the key could theoretically collide with another combination. With the current fixed data set, no names contain these characters, so there is no collision risk.
+**Risk:** If a character name or scenario name ever contained the characters `|` or `-`, the key could theoretically collide with another combination.
 
-**Note for future versions:** If expansion content is added, new character and scenario names should be checked to ensure they don't contain `|` or `-`. Alternatively, the separator could be changed to something less likely to appear naturally, such as `\x00` (null byte).
+**Current status:** All known characters and scenarios across all content packs (Series 1, Series 2, Scenario 14, Captain Crag) have been checked. None contain `|` or `-`. No collision risk exists with current data.
 
-**Verdict:** Not a current risk. Worth checking when adding expansion content.
+**Note for future versions:** When new content is added, new character and scenario names must be checked against these separators. Alternatively, the separator could be changed to something less likely to appear naturally, such as `\x00` (null byte).
+
+**Verdict:** Not a current risk. Check when adding new content.
+
+---
+
+### 8. Service Worker Cache Versioning
+
+**What it is:** The PWA service worker caches all app assets. The cache is named with the app version (e.g. `"twin-stars-v1.1.4"`).
+
+**Risk:** If the cache name is not updated when the app is deployed, users who have installed the PWA will continue to receive stale cached content indefinitely.
+
+**What was done:** The cache name is tied to the app version and must be bumped with every deployment.
+
+**Verdict:** Managed. The cache name must be updated in `service-worker.js` with every version bump.
 
 ---
 
@@ -127,9 +128,9 @@ For clarity, the following concerns that apply to typical web applications are *
 - **SQL injection** — No database, no queries.
 - **CSRF** — No server, no state-changing requests.
 - **Authentication / session hijacking** — No accounts, no sessions.
-- **HTTPS / TLS** — No network communication beyond font loading.
 - **Server-side vulnerabilities** — No server exists.
 - **Third-party scripts / supply chain** — No JavaScript libraries loaded from external sources.
+- **External font privacy** — Fonts are fully embedded; no external requests are made.
 
 ---
 
@@ -143,8 +144,8 @@ For clarity, the following concerns that apply to typical web applications are *
 | XSS via innerHTML | Low | Handled — esc() on all rendered data |
 | XSS via import | Low | Handled — isValidRecord() validation |
 | Malicious import file | Low | Handled — validation + user controls import |
-| Google Fonts privacy | Low | Accepted — IP only, no game data |
-| Google Fonts unavailability | Low | Handled — fallback fonts + user notice |
+| External font privacy | None | Resolved — fonts fully embedded |
 | Math.random() predictability | Not applicable | Accepted |
 | Timer drift | Not applicable | Accepted |
-| Combo key collision | Low (future risk) | Monitor when adding expansion content |
+| Combo key collision | Low (future risk) | Checked — no current conflicts |
+| Service worker cache staleness | Low | Managed — cache name tied to version |

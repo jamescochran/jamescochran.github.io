@@ -1,4 +1,4 @@
-const CACHE = "twin-stars-v1";
+const CACHE = "twin-stars-v1.1.4";
 const ASSETS = [
   "/TwinStarsRando/",
   "/TwinStarsRando/index.html",
