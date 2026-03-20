@@ -6,14 +6,12 @@ Unprioritized. Not all items will ship. This is a living document.
 
 ## Content
 
-- Add Series II characters (12) and scenarios (6)
-- Add Series III characters (4) and scenarios (2)
-- Add Captain Crag as an optional promo character
-- Add Droid Assistant tracking
+- ~~Add Series II characters (12) and scenarios (6)~~ ✅ Done
+- ~~Add Captain Crag as an optional promo character~~ ✅ Done
+- Add Scenario 13: Topple the Giant! (need physical card — character names unknown)
+- Add Droid Assistant tracking (C.R.A.N.K., MC-CY, Domino 2-5 / F1D0, T.R.IX, MANTIS — requires new UI for third character slot)
 - Add SYZYGY Mode (Series I) support
 - Add SYZYGY: Waypoints (Series II) support
-- Research and confirm all Series II scenario names
-- Research and confirm all Series III character and scenario names
 - Research and confirm exact SYZYGY and Waypoints rules to determine record model impact
 
 ---
@@ -21,11 +19,11 @@ Unprioritized. Not all items will ship. This is a living document.
 ## Settings / Content Toggles
 
 - Settings screen where the user selects which content they own
-- Toggle Series I on/off (on by default, cannot be the only thing disabled)
-- Toggle Series II on/off
-- Toggle Series III on/off
-- Toggle Captain Crag on/off
-- Toggle Droid Assistants on/off
+- ~~Toggle Series I on/off~~ ✅ Done
+- ~~Toggle Series II on/off~~ ✅ Done
+- ~~Toggle Scenario 14 on/off~~ ✅ Done
+- ~~Toggle Captain Crag on/off~~ ✅ Done
+- Toggle Droid Assistants on/off (requires new UI design first)
 - Toggle SYZYGY Mode on/off
 - Toggle SYZYGY: Waypoints on/off (requires Series II enabled)
 - Content selection persists to localStorage between sessions
@@ -89,9 +87,9 @@ Unprioritized. Not all items will ship. This is a living document.
 ## UI / UX
 
 - ~~Dark mode (current default)~~ ✅ Done
-- Light mode toggle
-- Respects OS-level dark/light preference on first load
-- Theme preference saved to localStorage
+- ~~Light mode toggle~~ ✅ Done
+- ~~Respects OS-level dark/light preference on first load~~ ✅ Done
+- ~~Theme preference saved to localStorage~~ ✅ Done
 - ~~Auto-scroll to combo card on mobile after loading~~ ✅ Done
 - ~~Play count badge on combo card~~ ✅ Done
 - Accessibility — all interactive elements keyboard navigable
@@ -101,7 +99,7 @@ Unprioritized. Not all items will ship. This is a living document.
 
 ## Fonts and Assets
 
-- ~~Fonts embedded as base64 (fully offline)~~ ✅ Done
+- ~~Fonts fetched from Google Fonts (requires internet for correct styling, falls back to system fonts)~~ ✅ Done
 - ~~PWA installable from hosted version~~ ✅ Done
 - ~~Custom app icon~~ ✅ Done
 - Improved app icon (hand-designed or illustrated)
@@ -122,7 +120,7 @@ Unprioritized. Not all items will ship. This is a living document.
 - ~~Downloadable as a single HTML file~~ ✅ Done
 - ~~Personal homepage at jamescochran.github.io~~ ✅ Done
 - Keep single-file distribution working alongside hosted PWA version
-- Service worker cache versioning — force update when new version is deployed
+- ~~Service worker cache versioning — force update when new version is deployed~~ ✅ Done
 
 ---
 

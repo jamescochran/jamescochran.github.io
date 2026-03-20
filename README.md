@@ -25,12 +25,15 @@ The front door. Avatar, name, links to wherever I exist online. Cormorant Garamo
 
 ### `/TwinStarsRando` — Twin Stars Randomizer
 
-Unofficial fan companion for **Twin Stars Adventure Series I** (Button Shy Games). A single HTML file that works offline, installs as a PWA, and doesn't need a server, an account, or your email address.
+**[▶ Open the app](https://jamescochran.github.io/TwinStarsRando/)**
+
+Unofficial fan companion for **Twin Stars Adventure Series** (Button Shy Games). A single HTML file that installs as a PWA and doesn't need a server, an account, or your email address.
 
 **Randomizer**
 - One button generates a random character pair + scenario from your active content packs
 - Manual selection mode if you want to pick your own combination
 - "My Collection" settings to toggle which expansions you own (Series 1, Series 2, Scenario 14, Captain Crag)
+- Light and dark theme, defaults to your OS preference
 
 **During play**
 - Session timer with pause and restart
