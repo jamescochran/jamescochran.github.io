@@ -1,7 +1,7 @@
 # Twin Stars Adventure Series — Randomizer
 ## Design & Requirements Document
 
-**Current Version: 1.3.3**
+**Current Version: 1.3.5**
 **Last Updated: March 2026**
 
 ---
@@ -12,11 +12,12 @@ A free, unofficial fan-made companion app for the **Twin Stars Adventure Series*
 
 The app supports content from multiple Twin Stars releases. Users select which games they own, and the app randomizes character and scenario combinations from only their collection.
 
-The app does four things:
+The app does five things:
 1. Lets the user configure which Twin Stars content they own
 2. Picks a random character combination and scenario from their active collection — or lets them pick manually
 3. Times the session automatically while they play
 4. Tracks results so they can see what they've played, how they did, and what's left unplayed
+5. Supports light and dark themes, defaulting to the user's OS preference
 
 This is not affiliated with or endorsed by Button Shy Games. All Twin Stars characters, scenarios, and game content are the intellectual property of Button Shy Games and their creators.
 
@@ -51,9 +52,7 @@ TwinStarsRando/
 
 **Internet required:** The app fetches Orbitron and Exo 2 from Google Fonts on load. An internet connection is required for correct visual styling. The app is functional without it but will fall back to system fonts.
 
-**Storage:** `localStorage` only. Two keys:
-- `"gameRecords"` — JSON array of all saved play records
-- `"enabledPacks"` — JSON array of enabled content pack IDs
+**Storage:** `localStorage` only. See the Data Model section for the full key list.
 
 Nothing is ever sent to a server.
 
@@ -64,15 +63,13 @@ Nothing is ever sent to a server.
 The app is installable as a Progressive Web App on mobile and desktop.
 
 **manifest.json** — declares the app name, icons, theme colors, and display mode. Key fields:
-- `name`: "Twin Stars Adventure Series Randomizer"  *(note: currently stale in file — see issue backlog)*
+- `name`: "Twin Stars Adventure Series Randomizer"
 - `short_name`: "Twin Stars"
 - `display`: "standalone"
 - `background_color` / `theme_color`: `#07091a`
-- Icons: 192×192 and 512×512 PNG
+- Icons: 192×192 and 512×512 PNG, each with separate `"any"` and `"maskable"` purpose entries
 
-**service-worker.js** — caches all app assets on install so the app shell loads instantly. Uses a cache-first strategy. The cache name is tied to the app version (e.g. `"twin-stars-v1.2.0"`) — **this must be updated with every deployment** or PWA users will receive stale content.
-
-**Known issue:** Both icon entries in manifest.json use `"purpose": "any maskable"` — these should be two separate entries (`"any"` and `"maskable"`) for correct icon rendering on all platforms.
+**service-worker.js** — caches all app assets on install so the app shell loads instantly. Uses a cache-first strategy. The cache name is tied to the app version (e.g. `"twin-stars-v1.3.5"`) — **this must be updated with every deployment** or PWA users will receive stale content.
 
 ---
 
@@ -125,7 +122,9 @@ Captain Crag *(fan-voted PNP Arcade promo — no new scenarios)*
 Stacked title styled to match original card art: "Twin Stars / Adventure / Randomizer". Author credit above in small caps. Positioned elements:
 
 - **"My Collection" button** — top-right corner. Opens the content pack settings modal. Styled as a small bordered Orbitron-font button.
+- **Theme toggle button** — left of "My Collection". Switches between dark and light mode. Shows a moon icon in dark mode, sun icon in light mode.
 - **Active packs label** — below the header rule. Shows which packs are currently enabled, e.g. "Series 1 · Series 2 · Cpt. Crag". Updated automatically when settings change.
+- **Onboarding tooltip** — appears automatically on first load, pointing at the My Collection and theme toggle buttons. Dismissed permanently via "Got it" button. Never shown again once dismissed (`hasSeenTip` flag in localStorage).
 
 ---
 
@@ -328,8 +327,6 @@ Example: `"Bood|Stag Solar-Escape The Brig!"`
 
 ---
 
----
-
 ## Roadmap
 
 ### v2.0 — Additional Content Packs
@@ -344,6 +341,18 @@ Content not yet in the app. Each should be added as its own pack in `CONTENT_PAC
 | SYZYGY: Waypoints (Series II) | Campaign mode overlay — separate from Series I SYZYGY |
 
 Note: Droid Assistants add a "third character" to any game, not a second — this requires new UI (a third optional slot) and a new record field to track which droid was used. Design needed before implementation.
+
+---
+
+### v2.1 — Lock Slots
+Allow the user to lock any combination of the two character slots and the scenario slot before randomizing. Locked slots keep their current value; only unlocked slots get re-randomized. Examples:
+
+- Lock the scenario → only characters change on each roll
+- Lock Character 1 → keep your favorite character, randomize their partner and mission
+- Lock both characters → only the scenario changes
+- Lock any two → only the remaining slot randomizes
+
+UI approach: a small lock icon or toggle next to each slot on the combination card. Locked slots are visually distinct (e.g. highlighted border or lock icon). The "Randomize" button respects all locks. If all three slots are locked, the button is disabled or a toast explains nothing will change.
 
 ---
 
