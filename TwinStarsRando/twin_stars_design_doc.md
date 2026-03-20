@@ -1,7 +1,7 @@
 # Twin Stars Adventure Series — Randomizer
 ## Design & Requirements Document
 
-**Current Version: 1.2.0**
+**Current Version: 1.3.1**
 **Last Updated: March 2026**
 
 ---
@@ -325,11 +325,6 @@ Example: `"Bood|Stag Solar-Escape The Brig!"`
 | GitHub | https://github.com/jamescochran/jamescochran.github.io |
 
 ---
-
-## Known Issues / Near-Term Fixes
-
-- **manifest.json `name` field** — still says "Twin Stars Adventure Series I Randomizer", needs updating to reflect multi-series support
-- **manifest.json icon `purpose`** — both icons use `"any maskable"` combined; should be two separate entries for correct platform rendering
 
 ---
 
