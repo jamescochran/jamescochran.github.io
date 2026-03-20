@@ -716,6 +716,53 @@
       margin-top: 10px;
       min-height: 14px;
     }
+    /* Onboarding tooltip */
+    .onboarding-tip {
+      position: absolute;
+      top: 36px; right: 0;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-glow);
+      border-radius: 10px;
+      padding: 14px 16px 12px;
+      width: 248px;
+      z-index: 100;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+      text-align: left;
+    }
+    .onboarding-tip::before {
+      content: '';
+      position: absolute;
+      top: -6px; right: 18px;
+      width: 10px; height: 10px;
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border-glow);
+      border-top: 1px solid var(--border-glow);
+      transform: rotate(45deg);
+    }
+    .onboarding-tip p {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    .onboarding-tip p:last-of-type { margin-bottom: 0; }
+    .onboarding-tip strong { color: var(--text-primary); }
+    .btn-tip-dismiss {
+      display: block;
+      width: 100%;
+      margin-top: 12px;
+      padding: 7px;
+      background: var(--accent-teal);
+      color: #07091a;
+      border: none;
+      border-radius: 6px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
     /* Settings modal */
     .settings-box {
       background: var(--bg-panel);
@@ -831,6 +878,11 @@
       <button class="btn-theme"    id="themeBtn"    title="Toggle theme"></button>
       <button class="btn-settings" id="settingsBtn" title="My Collection">My Collection</button>
     </div>
+    <div class="onboarding-tip hidden" id="onboardingTip">
+      <p><strong>My Collection</strong> — tell the app which Twin Stars games you own. Only your content gets randomized.</p>
+      <p><strong>&#9790; / &#9728;</strong> — switch between dark and light mode.</p>
+      <button class="btn-tip-dismiss" id="tipDismiss">Got it</button>
+    </div>
     <p class="author-label">Jason Tagmire &amp; Mike Mullins</p>
     <h1>Twin<br>Stars<br><span>Adventure</span><br><span class="sub">Randomizer</span></h1>
     <div class="header-rule"></div>
@@ -945,7 +997,7 @@
     <p class="footer-disclaimer">
       Twin Stars Adventure Series is designed by Jason Tagmire &amp; Mike Mullins and published by Button Shy Games. All characters, scenarios, and game content are the intellectual property of Button Shy Games and their creators. This is an unofficial, free, fan-made companion app made out of love for an incredible game — not affiliated with or endorsed by Button Shy Games. If you don't own Twin Stars yet, please go buy it. It's worth every penny.
     </p>
-    <p style="font-size:10px;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">v1.3.2</p>
+    <p style="font-size:10px;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">v1.3.3</p>
   </footer>
 
 </div>
@@ -1056,6 +1108,15 @@
 
   // ─── Onboarding tip ─────────────────────────────────────────────────────────
 
+  function initOnboardingTip() {
+    try { if (localStorage.getItem("hasSeenTip")) return; } catch(e) { return; }
+    document.getElementById("onboardingTip").classList.remove("hidden");
+  }
+
+  function dismissTip() {
+    document.getElementById("onboardingTip").classList.add("hidden");
+    try { localStorage.setItem("hasSeenTip", "1"); } catch(e) {}
+  }
 
   // ─── Storage ────────────────────────────────────────────────────────────────
 
@@ -1674,6 +1735,7 @@
   document.getElementById("manualChar1")    .addEventListener("change", () => syncDropdown("manualChar1", "manualChar2"));
   document.getElementById("manualChar2")    .addEventListener("change", () => syncDropdown("manualChar2", "manualChar1"));
   document.getElementById("themeBtn")       .addEventListener("click", toggleTheme);
+  document.getElementById("tipDismiss")     .addEventListener("click", dismissTip);
 
   // Restore last used result and difficulty
   try {
@@ -1685,6 +1747,7 @@
 
   buildActiveContent();
   populateSelectors();
+  initOnboardingTip();
 
   // Register service worker for PWA installation
   if ("serviceWorker" in navigator) {
