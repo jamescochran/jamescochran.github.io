@@ -923,7 +923,7 @@
     <p class="footer-disclaimer">
       Twin Stars Adventure Series is designed by Jason Tagmire &amp; Mike Mullins and published by Button Shy Games. All characters, scenarios, and game content are the intellectual property of Button Shy Games and their creators. This is an unofficial, free, fan-made companion app made out of love for an incredible game — not affiliated with or endorsed by Button Shy Games. If you don't own Twin Stars yet, please go buy it. It's worth every penny.
     </p>
-    <p style="font-size:10px;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">v1.1.4</p>
+    <p style="font-size:10px;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">v1.1.5</p>
   </footer>
 
 </div>
@@ -980,30 +980,42 @@
     }
   ];
 
-  // All known characters/scenarios across every pack — used for import validation
-  // so records from any pack are accepted regardless of what's currently enabled.
+  // Build flat sets of every character and scenario across ALL packs.
+  // A Set is like an array but each value can only appear once, and checking
+  // "does this value exist?" is very fast. We use these for import validation
+  // so that records from any pack are accepted even if that pack isn't currently enabled.
+  // flatMap(p => p.characters) means: for each pack, grab its characters array,
+  // then flatten all those arrays into one big list.
   const ALL_CHARACTERS_SET = new Set(CONTENT_PACKS.flatMap(p => p.characters));
   const ALL_SCENARIOS_SET  = new Set(CONTENT_PACKS.flatMap(p => p.scenarios));
 
-  // Active content — rebuilt by buildActiveContent() whenever packs change
+  // These two arrays hold only the content the user has enabled right now.
+  // They start empty and get filled by buildActiveContent() on startup and
+  // whenever the user changes their collection settings.
   let characters = [];
   let scenarios  = [];
 
-  // Valid values for import sanitization
+  // Sets of valid values used to sanity-check imported records.
   const VALID_RESULTS      = new Set(["Win", "Loss"]);
   const VALID_DIFFICULTIES = new Set(["Easy", "Medium", "Hard"]);
 
   // ─── Storage ────────────────────────────────────────────────────────────────
 
-  // Wrapped in try/catch: corrupted localStorage data won't crash the app
+  // Load saved records from localStorage (the browser's built-in key/value storage).
+  // localStorage persists even after the tab is closed — it's how we remember your history.
+  // We wrap this in try/catch so that if the saved data is somehow corrupted,
+  // the app starts fresh instead of crashing with an error.
   let records = [];
   try {
     const raw = localStorage.getItem("gameRecords");
-    if (raw) records = JSON.parse(raw);
+    if (raw) records = JSON.parse(raw);  // JSON.parse converts the saved text back into a JS array
   } catch (e) {
     console.warn("Could not load saved records:", e);
   }
 
+  // Save the current records array back to localStorage.
+  // JSON.stringify converts the JS array into a text string that can be stored.
+  // Wrapped in try/catch because storage can fail if the browser is nearly full.
   function saveRecords() {
     try {
       localStorage.setItem("gameRecords", JSON.stringify(records));
@@ -1014,48 +1026,62 @@
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
+  // Build a unique string that identifies a specific combination of two characters + one scenario.
+  // We sort the characters first so "Bood & Stag Solar" and "Stag Solar & Bood" produce the same key —
+  // order shouldn't matter. The "|" and "-" are just separators so the parts don't blur together.
+  // Example result: "Bood|Stag Solar-Escape The Brig!"
   function comboKey(comb) {
     return comb.characters.slice().sort().join("|") + "-" + comb.scenario;
   }
 
-  // Reuse a single element for HTML escaping — avoids creating a new DOM node on every call
+  // Safely escape any string before inserting it into HTML.
+  // This prevents "XSS" attacks — if a malicious imported file contained something like
+  // <script>alert("hacked")</script> as a character name, this function turns the angle
+  // brackets into harmless text so the browser never runs it as code.
+  // We reuse one hidden div element instead of creating a new one every time (minor performance win).
   const _escEl = document.createElement("div");
   function esc(str) {
-    _escEl.textContent = String(str);
-    return _escEl.innerHTML;
+    _escEl.textContent = String(str);  // textContent sets text safely — no HTML interpretation
+    return _escEl.innerHTML;           // innerHTML reads it back as escaped HTML entities
   }
 
+  // Convert a number of seconds into a MM:SS display string.
+  // padStart(2, "0") adds a leading zero if the number is only one digit (e.g. 9 → "09").
   function formatTime(secs) {
     const m = String(Math.floor(secs / 60)).padStart(2, "0");
     const s = String(secs % 60).padStart(2, "0");
     return m + ":" + s;
   }
 
+  // Show a small pop-up notification at the bottom of the screen that disappears after ~2.5 seconds.
+  // type can be "info" (teal) or "error" (red) — controls the CSS styling.
   function toast(msg, type) {
     const t = document.createElement("div");
     t.className = "toast " + (type || "info");
-    t.textContent = msg; // textContent — no XSS risk
+    t.textContent = msg; // textContent is safe here — no risk of running injected code
     document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2600);
+    setTimeout(() => t.remove(), 2600); // remove the element from the page after 2.6 seconds
   }
 
-  // Validate a single imported record against known-good values.
-  // IMPORTANT: When expansion content (Series II, III, Captain Crag etc.) is added,
-  // CHARACTER_SET and SCENARIO_SET must be updated to include the new values,
-  // otherwise records from those series will be rejected on import.
+  // Check whether a single imported record has all the right fields with valid values.
+  // This runs on every record when the user imports a JSON file — anything that doesn't
+  // pass gets silently skipped so bad data can never corrupt the record store.
   function isValidRecord(r) {
     return (
       r && typeof r === "object" &&
       Array.isArray(r.characters) &&
       r.characters.length === 2 &&
-      r.characters.every(c => ALL_CHARACTERS_SET.has(c)) &&
-      ALL_SCENARIOS_SET.has(r.scenario) &&
-      VALID_RESULTS.has(r.result) &&
-      VALID_DIFFICULTIES.has(r.difficulty) &&
+      r.characters.every(c => ALL_CHARACTERS_SET.has(c)) && // both characters must be real
+      ALL_SCENARIOS_SET.has(r.scenario) &&                  // scenario must be real
+      VALID_RESULTS.has(r.result) &&                        // must be "Win" or "Loss"
+      VALID_DIFFICULTIES.has(r.difficulty) &&               // must be "Easy", "Medium", or "Hard"
       typeof r.timestamp === "string"
     );
   }
 
+  // After the page finishes loading, verify that both custom fonts loaded correctly.
+  // The fonts are embedded in the HTML as base64 data, so they should always load —
+  // but this is a safety check in case something goes wrong.
   window.addEventListener("DOMContentLoaded", function () {
     document.fonts.ready.then(function () {
       const orbitronLoaded = document.fonts.check("700 1em Orbitron");
@@ -1064,6 +1090,7 @@
     });
   });
 
+  // Show a dismissable banner warning the user that the custom fonts didn't load.
   function showFontNotice() {
     if (document.getElementById("fontNotice")) return;
     const n = document.createElement("div");
@@ -1081,10 +1108,12 @@
 
   // ─── Timer ──────────────────────────────────────────────────────────────────
 
-  let timerSeconds  = 0;
-  let timerInterval = null;
-  let timerPaused   = false;
+  let timerSeconds  = 0;     // how many seconds have elapsed in the current session
+  let timerInterval = null;  // holds the reference to the repeating interval so we can stop it later
+  let timerPaused   = false; // whether the timer is currently paused
 
+  // Start the timer from zero. If one is already running, stop it first.
+  // setInterval calls the function inside every 1000 milliseconds (1 second).
   function startTimer() {
     stopTimer();
     timerSeconds = 0;
@@ -1098,10 +1127,12 @@
     }, 1000);
   }
 
+  // Stop the timer and clear the interval so it stops firing.
   function stopTimer() {
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
   }
 
+  // Flip the paused state and update the button label and display styling accordingly.
   function togglePause() {
     timerPaused = !timerPaused;
     const btn     = document.getElementById("pauseBtn");
@@ -1112,20 +1143,27 @@
 
   // ─── Dropdowns ──────────────────────────────────────────────────────────────
 
+  // Keep the two character dropdowns in sync so you can never pick the same character twice.
+  // Whenever one dropdown changes, this rebuilds the other to exclude the currently selected value.
+  // srcId is the dropdown that just changed; tgtId is the one to rebuild.
+  // We remember the previously selected value (prev) and restore it if it's still valid.
   function syncDropdown(srcId, tgtId) {
     const exclude = document.getElementById(srcId).value;
     const tgt     = document.getElementById(tgtId);
     const prev    = tgt.value;
-    tgt.innerHTML = "";
+    tgt.innerHTML = ""; // clear all current options
     characters.forEach(char => {
-      if (char === exclude) return;
+      if (char === exclude) return; // skip the character already chosen in the other dropdown
       const opt = document.createElement("option");
       opt.value = opt.textContent = char;
       tgt.appendChild(opt);
     });
-    if (prev && prev !== exclude) tgt.value = prev;
+    if (prev && prev !== exclude) tgt.value = prev; // restore previous selection if still available
   }
 
+  // Fill the Manual Selection dropdowns with the currently active characters and scenarios.
+  // Called once on startup and again any time the content pack selection changes.
+  // We clear the dropdowns first (innerHTML = "") so we don't end up with duplicates.
   function populateSelectors() {
     const c1 = document.getElementById("manualChar1");
     const sc = document.getElementById("manualScenario");
@@ -1141,14 +1179,19 @@
       opt.value = opt.textContent = s;
       sc.appendChild(opt);
     });
-    syncDropdown("manualChar1", "manualChar2");
+    syncDropdown("manualChar1", "manualChar2"); // initialize Character 2 to exclude Character 1's default
   }
 
   // ─── Difficulty status ──────────────────────────────────────────────────────
 
+  // For a given combination, return the play status at each difficulty level.
+  // Returns an array of three objects like: { diff: "Easy", state: "win" | "loss" | "unplayed" }
+  // "win" means you've won at least once at that difficulty.
+  // "loss" means you've played but never won.
+  // "unplayed" means you haven't tried this combo at that difficulty yet.
   function getDifficultyStatus(comb) {
     const key         = comboKey(comb);
-    const comboRecs   = records.filter(r => comboKey(r) === key);
+    const comboRecs   = records.filter(r => comboKey(r) === key); // all records for this exact combo
     return ["Easy", "Medium", "Hard"].map(diff => {
       const filtered = comboRecs.filter(r => r.difficulty === diff);
       if (!filtered.length) return { diff, state: "unplayed" };
@@ -1156,6 +1199,8 @@
     });
   }
 
+  // Build the HTML for the three difficulty badge dots shown on the combination card.
+  // The CSS class ("win", "loss", or "unplayed") controls the dot color.
   function renderDiffBadges(comb) {
     return getDifficultyStatus(comb).map(({ diff, state }) =>
       `<div class="diff-badge ${state}"><div class="diff-dot"></div>${esc(diff)}</div>`
@@ -1237,10 +1282,16 @@
     });
   }
 
+  // Build and display the list of combinations that haven't been played yet.
   function displayUnplayed() {
     const container = document.getElementById("unplayedContainer");
+
+    // Build a Set of combo keys for every record we have — fast lookup below.
     const playedKeys = new Set(records.map(r => comboKey(r)));
 
+    // Generate every possible unique pair of characters combined with every scenario.
+    // The j = i + 1 trick means we never pair a character with itself and never
+    // repeat the same pair in reverse (e.g. we get "Bood & Stag Solar" but not also "Stag Solar & Bood").
     const unplayed = [];
     for (let i = 0; i < characters.length; i++) {
       for (let j = i + 1; j < characters.length; j++) {
@@ -1336,6 +1387,8 @@
 
   // ─── Content packs ──────────────────────────────────────────────────────────
 
+  // Load which content packs the user has enabled from localStorage.
+  // Defaults to just Series 1 if nothing has been saved yet.
   let enabledPacks;
   try {
     const raw = localStorage.getItem("enabledPacks");
@@ -1344,14 +1397,22 @@
     enabledPacks = new Set(["series1"]);
   }
 
+  // Persist the current set of enabled pack IDs to localStorage.
+  // We spread the Set into an array ([...enabledPacks]) because JSON.stringify
+  // can't serialize a Set directly — it needs a plain array.
   function saveEnabledPacks() {
     try { localStorage.setItem("enabledPacks", JSON.stringify([...enabledPacks])); } catch(e) {}
   }
 
+  // Rebuild the active characters and scenarios arrays from the enabled packs.
+  // Called on startup and whenever the user changes their collection settings.
+  // flatMap collects all characters/scenarios from every enabled pack into one flat list.
+  // Wrapping in new Set(...) removes any duplicates, then [...] converts it back to an array.
   function buildActiveContent() {
     const active = CONTENT_PACKS.filter(p => enabledPacks.has(p.id));
     characters = [...new Set(active.flatMap(p => p.characters))];
     scenarios  = [...new Set(active.flatMap(p => p.scenarios))];
+    // Update the label below the header so the user can always see what's active
     const label = document.getElementById("activePacksLabel");
     if (label) label.textContent = active.map(p => p.shortName).join(" · ");
   }
@@ -1443,6 +1504,11 @@
     document.getElementById("manualShowBtn").classList.remove("visible");
   }
 
+  // Pick two random characters and a random scenario and load them.
+  // The shuffle trick: sort with a comparator that randomly returns negative or positive,
+  // which scrambles the array. We then take the first two results.
+  // The second .sort() on characters ensures the pair is stored alphabetically,
+  // matching how comboKey() expects them.
   function handleGenerate() {
     const shuffled = [...characters].sort(() => Math.random() - 0.5);
     loadCombination({
@@ -1452,6 +1518,7 @@
     hideManualPanel();
   }
 
+  // Load the combination the user picked manually from the dropdowns.
   function handleLoadManualCombo() {
     const char1    = document.getElementById("manualChar1").value;
     const char2    = document.getElementById("manualChar2").value;
@@ -1460,6 +1527,8 @@
     loadCombination({ characters: [char1, char2].sort(), scenario });
   }
 
+  // Save the outcome of the current session to the records array, then persist it.
+  // Stops the timer to capture the final elapsed time, then restarts it for the next play.
   function handleSaveRecord() {
     if (!currentCombination) return;
     const result     = document.getElementById("result").value;
@@ -1471,9 +1540,9 @@
       result,
       difficulty,
       playtime:   timerSeconds,
-      timestamp:  new Date().toLocaleString()
+      timestamp:  new Date().toLocaleString() // human-readable date/time string
     });
-    // Remember last used values for next save
+    // Remember last used values so they're pre-selected next time
     try { localStorage.setItem("lastResult", result); localStorage.setItem("lastDifficulty", difficulty); } catch(e) {}
     saveRecords();
     displayCombination(currentCombination);
@@ -1482,9 +1551,12 @@
     toast("Record saved!");
   }
 
+  // Export all records as a downloadable JSON file.
+  // We create a temporary invisible link element, programmatically click it to trigger
+  // the download, then remove the element. revokeObjectURL cleans up the temporary URL.
   function handleExport() {
     if (!records.length) { toast("No records to export.", "error"); return; }
-    const date     = new Date().toISOString().slice(0, 10);
+    const date     = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD" for the filename
     const blob     = new Blob([JSON.stringify(records, null, 2)], { type: "application/json" });
     const url      = URL.createObjectURL(blob);
     const a        = document.createElement("a");
@@ -1497,6 +1569,9 @@
     toast("Exported successfully!");
   }
 
+  // When the user selects a file from the import picker, read it and load its records.
+  // FileReader reads the file contents asynchronously — the onload callback fires when done.
+  // We validate every record before accepting it so bad data can't corrupt the store.
   document.getElementById("importFile").addEventListener("change", function () {
     const file = this.files[0];
     if (!file) return;
@@ -1505,7 +1580,7 @@
       try {
         const parsed = JSON.parse(e.target.result);
         if (!Array.isArray(parsed)) { toast("Invalid file format.", "error"); return; }
-        const valid   = parsed.filter(isValidRecord);
+        const valid   = parsed.filter(isValidRecord); // keep only records that pass validation
         const skipped = parsed.length - valid.length;
         records = valid;
         saveRecords();
