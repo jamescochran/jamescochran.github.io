@@ -329,6 +329,24 @@ Example: `"Bood|Stag Solar-Escape The Brig!"`
 
 ## Roadmap
 
+### v1.4 — Scenario Numbers in Display
+Each scenario has an official number in the Twin Stars series. Add a `number` field to each scenario in `CONTENT_PACKS` and display it as a muted prefix everywhere a scenario name appears.
+
+**Display format:** `Scenario 05:` in `--text-dim` color, followed by the scenario name in the normal color. Example: `Scenario 05: Steal the Plans!`
+
+**Scope of changes:**
+- Add `number` to each scenario object in the content pack data (e.g. `{ name: "Steal the Plans!", number: 5 }`)
+- Update scenario display in the combination card, manual selection dropdown, mission log table, unplayed combinations list, and combo history panel
+- Sort scenario lists by number everywhere they appear (dropdowns, unplayed list, etc.)
+- Scenario numbers for current packs:
+  - Series 1: Scenarios 01–06 (order matches current list order)
+  - Series 2: Scenarios 07–12 (order matches current list order)
+  - Scenario 14: Save the Spacewhales! — Scenario 14
+  - Scenario 13: Topple the Giant! — Scenario 13 *(not yet in app — add when v2.0 ships)*
+  - Captain Crag has no scenarios
+
+---
+
 ### v2.0 — Additional Content Packs
 Content not yet in the app. Each should be added as its own pack in `CONTENT_PACKS`:
 
