@@ -1,6 +1,6 @@
 # Twin Stars Randomizer — Security & Risk Document
 
-**Applies to: v1.1.4+**
+**Applies to: v1.3.5+**
 **Audience: Developers maintaining or extending this codebase**
 
 ---
@@ -67,11 +67,16 @@ function esc(str) {
 
 ---
 
-### 4. Fonts — No External Dependency
+### 4. Fonts — Google Fonts Dependency
 
-Both fonts (Orbitron and Exo 2) are embedded as base64 `@font-face` data URIs directly in the HTML. The app makes no external network requests for fonts. There is no Google Fonts dependency, no IP address exposure to third parties, and no dependency on external availability.
+Both fonts (Orbitron and Exo 2) are fetched from Google Fonts on load. The app makes external network requests to `fonts.googleapis.com` and `fonts.gstatic.com`.
 
-**Verdict:** Fully resolved. No network exposure from fonts.
+**Implications:**
+- Requires an internet connection for correct visual styling. Falls back to system sans-serif if offline.
+- Google receives the user's IP address and browser information as part of the font request — same as any Google Fonts site.
+- If Google Fonts is unavailable, the app still functions but renders in the fallback font.
+
+**Verdict:** Accepted. This is a deliberate trade-off for simplicity. The app handles no sensitive personal data, so the font request privacy exposure is low concern for this use case.
 
 ---
 
@@ -130,7 +135,7 @@ For clarity, the following concerns that apply to typical web applications are *
 - **Authentication / session hijacking** — No accounts, no sessions.
 - **Server-side vulnerabilities** — No server exists.
 - **Third-party scripts / supply chain** — No JavaScript libraries loaded from external sources.
-- **External font privacy** — Fonts are fully embedded; no external requests are made.
+- **External font privacy** — Low concern. Fonts are fetched from Google Fonts; see Section 4.
 
 ---
 
@@ -144,7 +149,7 @@ For clarity, the following concerns that apply to typical web applications are *
 | XSS via innerHTML | Low | Handled — esc() on all rendered data |
 | XSS via import | Low | Handled — isValidRecord() validation |
 | Malicious import file | Low | Handled — validation + user controls import |
-| External font privacy | None | Resolved — fonts fully embedded |
+| External font privacy | Low | Accepted — Google Fonts used, see Section 4 |
 | Math.random() predictability | Not applicable | Accepted |
 | Timer drift | Not applicable | Accepted |
 | Combo key collision | Low (future risk) | Checked — no current conflicts |

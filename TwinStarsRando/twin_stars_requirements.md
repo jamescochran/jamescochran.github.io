@@ -60,6 +60,7 @@ Unprioritized. Not all items will ship. This is a living document.
 - ~~Manual panel hides after randomizing, restores via ghost button~~ ✅ Done
 - ~~Dropdowns always reflect the currently loaded combination~~ ✅ Done
 - ~~Result and difficulty dropdowns remember last used values~~ ✅ Done
+- Lock slots — lock any combination of character 1, character 2, and scenario before randomizing; only unlocked slots re-roll
 - "Suggest an unplayed combination" weighted random — favors what hasn't been tried
 - Favorite / flag combinations to revisit later
 - Remember last loaded combination when reopening the app
@@ -92,6 +93,7 @@ Unprioritized. Not all items will ship. This is a living document.
 - ~~Theme preference saved to localStorage~~ ✅ Done
 - ~~Auto-scroll to combo card on mobile after loading~~ ✅ Done
 - ~~Play count badge on combo card~~ ✅ Done
+- Scenario numbers — display "Scenario 05:" as a muted prefix before the scenario name everywhere scenarios appear; sort scenario lists by number
 - Accessibility — all interactive elements keyboard navigable
 - Accessibility — screen reader friendly labels on buttons and controls
 
