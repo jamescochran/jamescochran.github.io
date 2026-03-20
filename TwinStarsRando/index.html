@@ -668,22 +668,34 @@
       max-width: 560px;
     }
 
-    /* Settings gear button */
+    /* My Collection button */
     .app-header { position: relative; }
     .btn-settings {
       position: absolute;
       top: 0; right: 0;
       background: none;
-      border: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
       color: var(--text-dim);
-      font-size: 20px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
       cursor: pointer;
-      padding: 6px 10px;
+      padding: 5px 8px;
       line-height: 1;
-      transition: color 0.15s;
+      transition: color 0.15s, border-color 0.15s;
       -webkit-tap-highlight-color: transparent;
     }
-    .btn-settings:hover { color: var(--accent-teal); }
+    .btn-settings:hover { color: var(--accent-teal); border-color: var(--accent-teal); }
+    .active-packs-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      margin-top: 10px;
+      min-height: 14px;
+    }
 
     /* Settings modal */
     .settings-box {
@@ -796,10 +808,11 @@
 <div class="app-shell">
 
   <header class="app-header">
-    <button class="btn-settings" id="settingsBtn" title="Content Settings">⚙</button>
+    <button class="btn-settings" id="settingsBtn">My Collection</button>
     <p class="author-label">Jason Tagmire &amp; Mike Mullins</p>
     <h1>Twin<br>Stars<br><span>Adventure</span><br><span class="sub">Randomizer</span></h1>
     <div class="header-rule"></div>
+    <p class="active-packs-label" id="activePacksLabel"></p>
   </header>
 
   <nav class="tab-nav">
@@ -909,7 +922,7 @@
     <p class="footer-disclaimer">
       Twin Stars Adventure Series is designed by Jason Tagmire &amp; Mike Mullins and published by Button Shy Games. All characters, scenarios, and game content are the intellectual property of Button Shy Games and their creators. This is an unofficial, free, fan-made companion app made out of love for an incredible game — not affiliated with or endorsed by Button Shy Games. If you don't own Twin Stars yet, please go buy it. It's worth every penny.
     </p>
-    <p style="font-size:10px;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">v1.1.1</p>
+    <p style="font-size:10px;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">v1.1.2</p>
   </footer>
 
 </div>
@@ -921,6 +934,7 @@
     {
       id: "series1",
       name: "Series 1 Wallet",
+      shortName: "Series 1",
       desc: "12 characters · 6 scenarios (the base game)",
       characters: [
         "Bood", "Stag Solar", "Fanoobia", "Inpon Gol",
@@ -935,6 +949,7 @@
     {
       id: "series2",
       name: "Series 2 Wallet",
+      shortName: "Series 2",
       desc: "12 characters · 6 scenarios",
       characters: [
         "Dain Taubo", "Grulexon", "Gari Obul", "Smiff",
@@ -949,6 +964,7 @@
     {
       id: "scenario14",
       name: "Scenario 14: Save the Spacewhales!",
+      shortName: "Scenario 14",
       desc: "2 characters · 1 scenario",
       characters: ["Striker", "Bippinnidip"],
       scenarios: ["Save the Spacewhales!"]
@@ -956,6 +972,7 @@
     {
       id: "captaincrag",
       name: "Captain Crag",
+      shortName: "Cpt. Crag",
       desc: "1 character · no new scenarios",
       characters: ["Captain Crag"],
       scenarios: []
@@ -1331,11 +1348,11 @@
   }
 
   function buildActiveContent() {
-    characters = CONTENT_PACKS.filter(p => enabledPacks.has(p.id)).flatMap(p => p.characters);
-    scenarios  = CONTENT_PACKS.filter(p => enabledPacks.has(p.id)).flatMap(p => p.scenarios);
-    // De-duplicate (Captain Crag adds only a character, no scenarios)
-    characters = [...new Set(characters)];
-    scenarios  = [...new Set(scenarios)];
+    const active = CONTENT_PACKS.filter(p => enabledPacks.has(p.id));
+    characters = [...new Set(active.flatMap(p => p.characters))];
+    scenarios  = [...new Set(active.flatMap(p => p.scenarios))];
+    const label = document.getElementById("activePacksLabel");
+    if (label) label.textContent = active.map(p => p.shortName).join(" · ");
   }
 
   function openSettings() {
@@ -1545,6 +1562,7 @@
   document.getElementById("historyTab")     .addEventListener("click", () => showTab("history"));
   document.getElementById("settingsBtn")    .addEventListener("click", openSettings);
   document.getElementById("settingsClose")  .addEventListener("click", closeSettings);
+  document.getElementById("settingsModal")  .addEventListener("click", e => { if (e.target === e.currentTarget) closeSettings(); });
   document.getElementById("manualChar1")    .addEventListener("change", () => syncDropdown("manualChar1", "manualChar2"));
   document.getElementById("manualChar2")    .addEventListener("change", () => syncDropdown("manualChar2", "manualChar1"));
 
