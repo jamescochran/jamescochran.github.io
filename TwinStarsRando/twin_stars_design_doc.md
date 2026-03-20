@@ -1,7 +1,7 @@
 # Twin Stars Adventure Series — Randomizer
 ## Design & Requirements Document
 
-**Current Version: 1.3.5**
+**Current Version: 1.3.6**
 **Last Updated: March 2026**
 
 ---
