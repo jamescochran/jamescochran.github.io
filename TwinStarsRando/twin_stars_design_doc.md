@@ -221,6 +221,11 @@ Embed Orbitron and Exo 2 as base64 directly in the HTML so the file works with p
 
 ---
 
+### v1.3 — First-Run Tooltip on "My Collection"
+On the very first load, show a tooltip or callout arrow pointing to the "My Collection" button in the header, letting the user know that's where they select which games they own. Dismiss on tap/click or after interacting with the button. Store a flag in localStorage so it never shows again after being dismissed.
+
+---
+
 ### v1.2 — Light / Dark Mode *(high priority)*
 - Toggle between the current dark space theme and a light mode
 - Light mode should feel designed — a proper alternate palette, not just inverted colors
