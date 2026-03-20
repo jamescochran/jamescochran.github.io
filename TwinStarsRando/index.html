@@ -668,6 +668,80 @@
       max-width: 560px;
     }
 
+    /* Settings gear button */
+    .app-header { position: relative; }
+    .btn-settings {
+      position: absolute;
+      top: 0; right: 0;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 6px 10px;
+      line-height: 1;
+      transition: color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-settings:hover { color: var(--accent-teal); }
+
+    /* Settings modal */
+    .settings-box {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-glow);
+      border-radius: 12px;
+      padding: 28px 24px;
+      max-width: 380px;
+      width: 100%;
+    }
+    .settings-box h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent-teal);
+      margin-bottom: 8px;
+    }
+    .settings-box > p {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .pack-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .pack-item:last-child { border-bottom: none; }
+    .pack-item input[type="checkbox"] {
+      margin-top: 3px;
+      accent-color: var(--accent-teal);
+      width: 16px; height: 16px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .pack-item-info { flex: 1; }
+    .pack-item-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-main);
+      margin-bottom: 3px;
+    }
+    .pack-item-desc { font-size: 11px; color: var(--text-dim); line-height: 1.4; }
+    .settings-warning {
+      font-size: 11px;
+      color: var(--loss-color);
+      margin-top: 12px;
+      min-height: 16px;
+    }
+
     /* Footer element */
     footer {
       margin-top: 40px;
@@ -706,11 +780,25 @@
   </div>
 </div>
 
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="settings-box">
+    <h2>Content Packs</h2>
+    <p>Select which expansions you own to include their characters and scenarios in the randomizer.</p>
+    <div id="packList"></div>
+    <p class="settings-warning" id="settingsWarning"></p>
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn btn-primary" id="settingsClose">Done</button>
+    </div>
+  </div>
+</div>
+
 <div class="app-shell">
 
   <header class="app-header">
+    <button class="btn-settings" id="settingsBtn" title="Content Settings">⚙</button>
     <p class="author-label">Jason Tagmire &amp; Mike Mullins</p>
-    <h1>Twin<br>Stars<br><span>Adventure</span><br><span class="sub">Series I Randomizer</span></h1>
+    <h1>Twin<br>Stars<br><span>Adventure</span><br><span class="sub">Randomizer</span></h1>
     <div class="header-rule"></div>
   </header>
 
@@ -829,21 +917,63 @@
 <script>
   // ─── Data ───────────────────────────────────────────────────────────────────
 
-  const characters = [
-    "Bood", "Stag Solar", "Fanoobia", "Inpon Gol",
-    "Grant Rockgardner", "Roux Jaezmina", "Yanfred Jima",
-    "Saaze", "Inzill Mey", "Strezelsior", "Kinglan", "Brenimov-X"
-  ];
-  const scenarios = [
-    "Escape The Brig!", "Rule The World!", "Stop The Virus!",
-    "Hunt The Bounty!", "Steal The Plans!", "Confine The Quarks!"
+  const CONTENT_PACKS = [
+    {
+      id: "series1",
+      name: "Series 1 Wallet",
+      desc: "12 characters · 6 scenarios (the base game)",
+      characters: [
+        "Bood", "Stag Solar", "Fanoobia", "Inpon Gol",
+        "Grant Rockgardner", "Roux Jaezmina", "Yanfred Jima",
+        "Saaze", "Inzill Mey", "Strezelsior", "Kinglan", "Brenimov-X"
+      ],
+      scenarios: [
+        "Escape The Brig!", "Rule The World!", "Stop The Virus!",
+        "Hunt The Bounty!", "Steal The Plans!", "Confine The Quarks!"
+      ]
+    },
+    {
+      id: "series2",
+      name: "Series 2 Wallet",
+      desc: "12 characters · 6 scenarios",
+      characters: [
+        "Dain Taubo", "Grulexon", "Gari Obul", "Smiff",
+        "Zoaze", "Tumbug Firo", "Mzerzo", "Phaeton",
+        "Hebolt Rom", "Tarla Voke", "Gruffles", "\"Mad\" Anxy"
+      ],
+      scenarios: [
+        "Master the Trials!", "Beat the Odds!", "Control the Skies!",
+        "Sell the Junk!", "Destroy the Order!", "Serve the Rabble!"
+      ]
+    },
+    {
+      id: "scenario14",
+      name: "Scenario 14: Save the Spacewhales!",
+      desc: "2 characters · 1 scenario",
+      characters: ["Striker", "Bippinnidip"],
+      scenarios: ["Save the Spacewhales!"]
+    },
+    {
+      id: "captaincrag",
+      name: "Captain Crag",
+      desc: "1 character · no new scenarios",
+      characters: ["Captain Crag"],
+      scenarios: []
+    }
   ];
 
+  // All known characters/scenarios across every pack — used for import validation
+  // so records from any pack are accepted regardless of what's currently enabled.
+  const ALL_CHARACTERS_SET = new Set(CONTENT_PACKS.flatMap(p => p.characters));
+  const ALL_SCENARIOS_SET  = new Set(CONTENT_PACKS.flatMap(p => p.scenarios));
+
+  // Active content — rebuilt by buildActiveContent() whenever packs change
+  let characters = [];
+  let scenarios  = [];
+
   // Valid values for import sanitization
-  const VALID_RESULTS     = new Set(["Win", "Loss"]);
+  const VALID_RESULTS      = new Set(["Win", "Loss"]);
   const VALID_DIFFICULTIES = new Set(["Easy", "Medium", "Hard"]);
-  const CHARACTER_SET     = new Set(characters);
-  const SCENARIO_SET      = new Set(scenarios);
 
   // ─── Storage ────────────────────────────────────────────────────────────────
 
@@ -900,8 +1030,8 @@
       r && typeof r === "object" &&
       Array.isArray(r.characters) &&
       r.characters.length === 2 &&
-      r.characters.every(c => CHARACTER_SET.has(c)) &&
-      SCENARIO_SET.has(r.scenario) &&
+      r.characters.every(c => ALL_CHARACTERS_SET.has(c)) &&
+      ALL_SCENARIOS_SET.has(r.scenario) &&
       VALID_RESULTS.has(r.result) &&
       VALID_DIFFICULTIES.has(r.difficulty) &&
       typeof r.timestamp === "string"
@@ -981,6 +1111,8 @@
   function populateSelectors() {
     const c1 = document.getElementById("manualChar1");
     const sc = document.getElementById("manualScenario");
+    c1.innerHTML = "";
+    sc.innerHTML = "";
     characters.forEach(char => {
       const opt = document.createElement("option");
       opt.value = opt.textContent = char;
@@ -992,8 +1124,6 @@
       sc.appendChild(opt);
     });
     syncDropdown("manualChar1", "manualChar2");
-    document.getElementById("manualChar1").addEventListener("change", () => syncDropdown("manualChar1", "manualChar2"));
-    document.getElementById("manualChar2").addEventListener("change", () => syncDropdown("manualChar2", "manualChar1"));
   }
 
   // ─── Difficulty status ──────────────────────────────────────────────────────
@@ -1186,6 +1316,78 @@
     });
   }
 
+  // ─── Content packs ──────────────────────────────────────────────────────────
+
+  let enabledPacks;
+  try {
+    const raw = localStorage.getItem("enabledPacks");
+    enabledPacks = raw ? new Set(JSON.parse(raw)) : new Set(["series1"]);
+  } catch(e) {
+    enabledPacks = new Set(["series1"]);
+  }
+
+  function saveEnabledPacks() {
+    try { localStorage.setItem("enabledPacks", JSON.stringify([...enabledPacks])); } catch(e) {}
+  }
+
+  function buildActiveContent() {
+    characters = CONTENT_PACKS.filter(p => enabledPacks.has(p.id)).flatMap(p => p.characters);
+    scenarios  = CONTENT_PACKS.filter(p => enabledPacks.has(p.id)).flatMap(p => p.scenarios);
+    // De-duplicate (Captain Crag adds only a character, no scenarios)
+    characters = [...new Set(characters)];
+    scenarios  = [...new Set(scenarios)];
+  }
+
+  function openSettings() {
+    const list = document.getElementById("packList");
+    list.innerHTML = "";
+    CONTENT_PACKS.forEach(pack => {
+      const item = document.createElement("div");
+      item.className = "pack-item";
+      const cb = document.createElement("input");
+      cb.type    = "checkbox";
+      cb.id      = "pack-" + pack.id;
+      cb.checked = enabledPacks.has(pack.id);
+      cb.addEventListener("change", () => {
+        if (cb.checked) {
+          enabledPacks.add(pack.id);
+        } else {
+          enabledPacks.delete(pack.id);
+        }
+        // Require at least 2 characters and 1 scenario to play
+        const testChars = CONTENT_PACKS.filter(p => enabledPacks.has(p.id)).flatMap(p => p.characters);
+        const testScens = CONTENT_PACKS.filter(p => enabledPacks.has(p.id)).flatMap(p => p.scenarios);
+        const warn = document.getElementById("settingsWarning");
+        if (testChars.length < 2 || testScens.length === 0) {
+          warn.textContent = "At least 2 characters and 1 scenario required.";
+          cb.checked = !cb.checked;
+          if (cb.checked) enabledPacks.add(pack.id); else enabledPacks.delete(pack.id);
+        } else {
+          warn.textContent = "";
+        }
+      });
+      const info = document.createElement("div");
+      info.className = "pack-item-info";
+      info.innerHTML = `<div class="pack-item-name">${esc(pack.name)}</div><div class="pack-item-desc">${esc(pack.desc)}</div>`;
+      item.appendChild(cb);
+      item.appendChild(info);
+      list.appendChild(item);
+    });
+    document.getElementById("settingsWarning").textContent = "";
+    document.getElementById("settingsModal").classList.add("open");
+  }
+
+  function closeSettings() {
+    document.getElementById("settingsModal").classList.remove("open");
+    buildActiveContent();
+    saveEnabledPacks();
+    populateSelectors();
+    if (currentCombination) {
+      displayCombination(currentCombination);
+      displayComboHistory(currentCombination);
+    }
+  }
+
   // ─── Actions ────────────────────────────────────────────────────────────────
 
   function loadCombination(comb) {
@@ -1339,6 +1541,10 @@
   document.getElementById("exportBtn")      .addEventListener("click", handleExport);
   document.getElementById("randomizerTab")  .addEventListener("click", () => showTab("randomizer"));
   document.getElementById("historyTab")     .addEventListener("click", () => showTab("history"));
+  document.getElementById("settingsBtn")    .addEventListener("click", openSettings);
+  document.getElementById("settingsClose")  .addEventListener("click", closeSettings);
+  document.getElementById("manualChar1")    .addEventListener("change", () => syncDropdown("manualChar1", "manualChar2"));
+  document.getElementById("manualChar2")    .addEventListener("change", () => syncDropdown("manualChar2", "manualChar1"));
 
   // Restore last used result and difficulty
   try {
@@ -1348,6 +1554,7 @@
     if (lastDifficulty) document.getElementById("difficulty").value = lastDifficulty;
   } catch(e) {}
 
+  buildActiveContent();
   populateSelectors();
 
   // Register service worker for PWA installation
