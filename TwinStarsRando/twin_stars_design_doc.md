@@ -1,7 +1,7 @@
 # Twin Stars Adventure Series — Randomizer
 ## Design & Requirements Document
 
-**Current Version: 1.3.1**
+**Current Version: 1.3.3**
 **Last Updated: March 2026**
 
 ---
@@ -270,6 +270,8 @@ Each saved play session is stored as:
 | `"enabledPacks"` | JSON array of pack ID strings | e.g. `["series1","series2"]` |
 | `"lastResult"` | `"Win"` or `"Loss"` | Pre-selects result dropdown on next save |
 | `"lastDifficulty"` | `"Easy"`, `"Medium"`, or `"Hard"` | Pre-selects difficulty dropdown on next save |
+| `"theme"` | `"dark"` or `"light"` | Saved theme preference; defaults to OS setting if absent |
+| `"hasSeenTip"` | `"1"` | Set after the onboarding tooltip is dismissed; never shows again once set |
 
 ### Combo Key
 
@@ -329,19 +331,6 @@ Example: `"Bood|Stag Solar-Escape The Brig!"`
 ---
 
 ## Roadmap
-
-### v1.3 — First-Run "My Collection" Tooltip
-On the very first load, show a tooltip or callout arrow pointing to the "My Collection" button, letting the user know that's where they select which games they own. Dismiss on tap/click or after opening the modal. Store a `"hasSeenCollectionTip"` flag in localStorage so it never shows again after being dismissed.
-
----
-
-### v1.4 — Light / Dark Mode
-- Toggle between the current dark space theme and a light mode
-- Light mode should feel designed — a proper alternate palette, not just inverted colors
-- Default to the user's OS-level preference (`prefers-color-scheme`) on first load
-- Save choice to localStorage
-
----
 
 ### v2.0 — Additional Content Packs
 Content not yet in the app. Each should be added as its own pack in `CONTENT_PACKS`:
