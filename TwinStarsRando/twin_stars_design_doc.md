@@ -1,21 +1,24 @@
-# Twin Stars Adventure Series I — Randomizer
+# Twin Stars Adventure Series — Randomizer
 ## Design & Requirements Document
 
-**Current Version: 1.0.3**
+**Current Version: 1.2.0**
 **Last Updated: March 2026**
 
 ---
 
 ## What Is This?
 
-This is a free, unofficial fan-made companion app for the card game **Twin Stars Adventure Series I**, designed by Jason Tagmire & Mike Mullins and published by Button Shy Games.
+A free, unofficial fan-made companion app for the **Twin Stars Adventure Series** card games, designed by Jason Tagmire & Mike Mullins and published by Button Shy Games.
 
-It is a single HTML file. You download it, open it in any web browser, and it works. No installation. No account. No server. No internet required to use it (though an internet connection is needed the first time to load the custom fonts — more on that below).
+The app supports content from multiple Twin Stars releases. Users select which games they own, and the app randomizes character and scenario combinations from only their collection.
 
-The app does three things:
-1. Helps you pick a character combination and scenario to play — either randomly or by your own choice.
-2. Times your session automatically while you play.
-3. Tracks your results so you can see what you've played, how you did, and which difficulty levels you've conquered.
+The app does four things:
+1. Lets the user configure which Twin Stars content they own
+2. Picks a random character combination and scenario from their active collection — or lets them pick manually
+3. Times the session automatically while they play
+4. Tracks results so they can see what they've played, how they did, and what's left unplayed
+
+This is not affiliated with or endorsed by Button Shy Games. All Twin Stars characters, scenarios, and game content are the intellectual property of Button Shy Games and their creators.
 
 ---
 
@@ -26,157 +29,257 @@ Made with love by *THE* James Dean Cochran.
 - Bluesky: https://bsky.app/profile/jamescochran.bsky.social
 - Tip jar: https://ko-fi.com/jamescochran
 - Community: https://discord.gg/aUBMvnu (Button Shy Discord)
-
-This app is not affiliated with or endorsed by Button Shy Games. All Twin Stars characters, scenarios, and game content are the intellectual property of Button Shy Games and their creators.
+- GitHub: https://github.com/jamescochran/jamescochran.github.io
 
 ---
 
-## How It Works — Feature by Feature
+## Architecture
 
-### The Header
+**Stack:** Plain HTML, CSS, vanilla JavaScript — no frameworks, no libraries, no build tools.
 
-At the top of the app you'll see the game title styled to match the original card art — stacked, bold, white text on the dark background. The author credit (Jason Tagmire & Mike Mullins) sits above the title in small caps.
+**File structure:**
+```
+TwinStarsRando/
+  index.html          ← the entire app (HTML + CSS + JS in one file)
+  service-worker.js   ← PWA offline caching
+  manifest.json       ← PWA install metadata
+  icon-192.png        ← PWA icon
+  icon-512.png        ← PWA icon
+```
+
+**Why one HTML file?** The app logic (HTML structure, CSS styles, JavaScript) all lives in `index.html`. This is a deliberate choice — it keeps the project simple, requires no build pipeline, and makes the app easy to understand. The three extra files (`service-worker.js`, `manifest.json`, icons) exist only because the PWA spec requires them to be separate — they cannot be inlined.
+
+**Internet required:** The app fetches Orbitron and Exo 2 from Google Fonts on load. An internet connection is required for correct visual styling. The app is functional without it but will fall back to system fonts.
+
+**Storage:** `localStorage` only. Two keys:
+- `"gameRecords"` — JSON array of all saved play records
+- `"enabledPacks"` — JSON array of enabled content pack IDs
+
+Nothing is ever sent to a server.
+
+---
+
+## PWA Details
+
+The app is installable as a Progressive Web App on mobile and desktop.
+
+**manifest.json** — declares the app name, icons, theme colors, and display mode. Key fields:
+- `name`: "Twin Stars Adventure Series Randomizer"  *(note: currently stale in file — see issue backlog)*
+- `short_name`: "Twin Stars"
+- `display`: "standalone"
+- `background_color` / `theme_color`: `#07091a`
+- Icons: 192×192 and 512×512 PNG
+
+**service-worker.js** — caches all app assets on install so the app shell loads instantly. Uses a cache-first strategy. The cache name is tied to the app version (e.g. `"twin-stars-v1.2.0"`) — **this must be updated with every deployment** or PWA users will receive stale content.
+
+**Known issue:** Both icon entries in manifest.json use `"purpose": "any maskable"` — these should be two separate entries (`"any"` and `"maskable"`) for correct icon rendering on all platforms.
+
+---
+
+## Content Packs
+
+Content is organized into packs. Each pack has an `id`, `name`, `shortName`, `desc`, a list of `characters`, and a list of `scenarios`. The user selects which packs they own via the "My Collection" modal. The randomizer and manual dropdowns only include content from enabled packs.
+
+Characters and scenarios from different packs can be freely mixed — any character can be paired with any scenario regardless of which release they came from.
+
+**Current packs:**
+
+| ID | Name | Characters | Scenarios |
+|---|---|---|---|
+| `series1` | Series 1 Wallet | 12 | 6 |
+| `series2` | Series 2 Wallet | 12 | 6 |
+| `scenario14` | Scenario 14: Save the Spacewhales! | 2 | 1 |
+| `captaincrag` | Captain Crag | 1 | 0 |
+
+**Series 1 characters (12):**
+Bood, Stag Solar, Fanoobia, Inpon Gol, Grant Rockgardner, Roux Jaezmina, Yanfred Jima, Saaze, Inzill Mey, Strezelsior, Kinglan, Brenimov-X
+
+**Series 1 scenarios (6):**
+Escape The Brig!, Rule The World!, Stop The Virus!, Hunt The Bounty!, Steal The Plans!, Confine The Quarks!
+
+**Series 2 characters (12):**
+Dain Taubo, Grulexon, Gari Obul, Smiff, Zoaze, Tumbug Firo, Mzerzo, Phaeton, Hebolt Rom, Tarla Voke, Gruffles, "Mad" Anxy
+
+**Series 2 scenarios (6):**
+Master the Trials!, Beat the Odds!, Control the Skies!, Sell the Junk!, Destroy the Order!, Serve the Rabble!
+
+**Scenario 14 characters (2):**
+Striker, Bippinnidip
+
+**Scenario 14 scenarios (1):**
+Save the Spacewhales!
+
+**Captain Crag characters (1):**
+Captain Crag *(fan-voted PNP Arcade promo — no new scenarios)*
+
+**Validation:** Import validation uses `ALL_CHARACTERS_SET` and `ALL_SCENARIOS_SET`, which include every character and scenario from every pack regardless of what's currently enabled. This means records from any pack can always be imported even if that pack is toggled off.
+
+**Minimum requirement:** At least 2 characters and 1 scenario must be active for the app to function. The settings modal enforces this and prevents disabling a pack that would violate it.
+
+---
+
+## Feature Reference
+
+### Header
+
+Stacked title styled to match original card art: "Twin Stars / Adventure / Randomizer". Author credit above in small caps. Positioned elements:
+
+- **"My Collection" button** — top-right corner. Opens the content pack settings modal. Styled as a small bordered Orbitron-font button.
+- **Active packs label** — below the header rule. Shows which packs are currently enabled, e.g. "Series 1 · Series 2 · Cpt. Crag". Updated automatically when settings change.
+
+---
+
+### My Collection Modal
+
+Opens when the user taps "My Collection". Lists all content packs as checkbox rows. Each row shows the pack name and a brief description of what it contains.
+
+- Checking a box adds that pack's characters/scenarios to the active pool
+- Unchecking removes them
+- If unchecking would leave fewer than 2 characters or 0 scenarios, the action is blocked and a warning is shown
+- Closing the modal (via "Done" button or tapping the backdrop) saves the selection to `localStorage`, rebuilds the active content arrays, repopulates the dropdowns, and refreshes all displays
 
 ---
 
 ### Tab 1: Randomizer
 
-This is the main screen. It has two ways to load a combination.
+Two ways to load a combination:
 
 **Randomize Combination**
-Click the big orange button. The app picks two unique characters at random, sorts them alphabetically, and picks one scenario at random. The result is displayed immediately and the timer starts.
+Large orange button. Shuffles the active characters array using a `Math.random()` sort, takes the first two, sorts them alphabetically, and picks a random scenario. Loads the result immediately and starts the timer. Hides the Manual Selection panel.
 
-**Manual Selection**
-Three dropdowns: Character 1, Character 2, Scenario. The two character dropdowns filter each other in real time — if you pick Bood in the first dropdown, Bood disappears from the second. This makes it impossible to accidentally pick the same character twice. Click Load Mission to load your selection.
+**Manual Selection** *(collapsed by default, shown via "+ Manual Selection" link)*
+Three dropdowns: Character 1, Character 2, Scenario. The two character dropdowns are always kept in sync — selecting a character in one removes it from the other, making it impossible to select the same character twice. Pressing "Load Mission" loads the combination.
 
-Whichever method you use, the dropdowns always update to reflect the currently loaded combination so you always know what's active.
-
----
-
-### The Combination Card
-
-Once a combination is loaded, a card appears showing:
-
-- The two character names
-- The scenario name
-- Three difficulty badges: Easy, Medium, Hard — each showing your history at a glance:
-  - **Dim dot** — never played this combo at this difficulty
-  - **Teal dot** — you've won at least once at this difficulty
-  - **Red dot** — you've played but never won at this difficulty
-
-At the bottom of the card is the **timer**:
-- Starts counting automatically the moment you load a combination
-- **Restart** button on the left — asks "Are you sure?" before resetting to 00:00
-- **Pause** button on the right — turns orange when paused, showing you the timer is stopped. Click again to Resume.
+After any combination is loaded, the manual dropdowns update to reflect it.
 
 ---
 
-### Record Outcome
+### Combination Card
 
-Below the combination card, a panel appears where you log the result of your play session:
+Displayed once a combination is loaded. Contains:
 
-- **Result**: Win or Loss
-- **Difficulty**: Easy, Medium, or Hard
-- **Save Record** — saves the result along with the elapsed playtime and a timestamp to your local browser storage. The combination card and history refresh immediately. The timer restarts so you can play the same combo again right away.
+- **Character names** — displayed large with "&" between them
+- **Scenario name**
+- **Play count** — "Never played", "Played 1 time", or "Played N times"
+- **Difficulty badges** — three badges (Easy, Medium, Hard), each with a colored dot:
+  - Dim dot — never played this combo at this difficulty
+  - Teal dot — won at least once at this difficulty
+  - Red dot — played at this difficulty but never won
+- **Timer** — starts automatically when a combination loads. Shows elapsed time in MM:SS format.
+  - **Restart button** — shows a confirmation modal before resetting to 00:00
+  - **Pause / Resume button** — toggles pause state; button turns orange while paused
 
 ---
 
-### Combo History
+### Record Outcome Panel
 
-Below the Record Outcome panel, a table shows all past records for the currently loaded combination — Date/Time, Result, Difficulty, and Time played.
+Appears below the combination card once a combination is loaded.
+
+- **Result** dropdown: Win / Loss
+- **Difficulty** dropdown: Easy / Medium / Hard
+- **Save Record button** — stops the timer, saves the record with the elapsed time and a timestamp, restarts the timer for the next round, refreshes the combination card and history
+
+The last-used Result and Difficulty values are remembered in `localStorage` and pre-selected on the next save.
+
+---
+
+### Combo History Panel
+
+Appears below the Record Outcome panel once a combination is loaded. Shows a table of all past records for the *current combination only*: Date/Time, Result, Difficulty, Time, and a ✕ delete button per row.
+
+Deleting a record removes it from the array, saves, and refreshes the card and combo history.
 
 ---
 
 ### Tab 2: Mission Log
 
-The Mission Log shows every record you've ever saved, across all combinations, in one table: Date/Time, Characters, Scenario, Result, Difficulty, Time.
+**Mission Log table** — every record ever saved, across all combinations: Date/Time, Characters, Scenario, Result, Difficulty, Time, and a ✕ delete button per row. Deleting a record also refreshes the Unplayed Combinations list and the active combination card if one is loaded.
 
-**Export** — Downloads all your records as a JSON file (`twin_stars_records.json`). Good for backup or sharing.
+**Export** — downloads all records as a JSON file named `twin_stars_records_YYYY-MM-DD.json`.
 
-**Import** — Click to open a file picker. Select a previously exported JSON file. Records load automatically on selection — no second button. Every record is validated before being accepted. Invalid records are skipped and you're told how many were dropped. Records from before the timer feature was added will show "—" in the Time column.
+**Import** — file picker (no submit button needed — fires on file selection). Reads the file, parses JSON, runs every record through `isValidRecord()`, replaces the current records with the valid ones, and shows a toast confirming how many were imported and how many were skipped. Invalid records are dropped silently.
 
-**Clear All** — Deletes all records after a confirmation modal. This cannot be undone.
+**Clear All** — shows a confirmation modal. Deletes all records on confirm.
+
+**Unplayed Combinations** — lists all character/scenario combinations from the active content that haven't been played yet. Shows a count ("X of Y combinations played"). Each entry has a "Play" button that loads that combination and switches to the Randomizer tab. Only the first 20 unplayed combos are shown; remaining count shown as "…and N more". The total combination count formula is: `characters.length × (characters.length - 1) / 2 × scenarios.length`.
 
 ---
 
 ### Footer
 
-The footer includes:
-- Credit and tip/Ko-fi link
+- Byline: "Made with love by THE James Dean Cochran" (THE is a link to Bluesky)
+- Ko-fi tip jar link
 - Hot Dogs BGG link (James's other favorite Button Shy game)
 - Button Shy Discord invite
-- Buy Twin Stars (Button Shy store)
+- "Buy Twin Stars" link (Button Shy store)
 - BGG page for Twin Stars
-- Full IP disclaimer
+- GitHub link
+- IP disclaimer
 
 ---
 
-### Fonts and Offline Use
+### Modals
 
-The app uses two fonts from Google Fonts: **Orbitron** (headings) and **Exo 2** (body text). These load automatically when you have an internet connection.
+Three modal overlays share the same `.modal-overlay` + `.modal-box` structure. All close when clicking/tapping the backdrop.
 
-If you open the app offline and the fonts haven't loaded before, a small dismissable notice appears in the bottom-right corner explaining how to get the full visual experience. The app is fully functional without the fonts — it just looks a little different.
+| Modal | ID | Trigger | Actions |
+|---|---|---|---|
+| Restart Timer | `restartModal` | Restart button on timer | Cancel / Restart |
+| Clear All Records | `confirmModal` | "Clear All" button | Cancel / Clear All |
+| My Collection | `settingsModal` | "My Collection" button | Checkbox list + Done |
 
 ---
 
-## Game Data (Series I)
+### Toast Notifications
 
-### Characters (12)
-
-Bood, Stag Solar, Fanoobia, Inpon Gol, Grant Rockgardner, Roux Jaezmina, Yanfred Jima, Saaze, Inzill Mey, Strezelsior, Kinglan, Brenimov-X
-
-### Scenarios (6)
-
-Escape The Brig!, Rule The World!, Stop The Virus!, Hunt The Bounty!, Steal The Plans!, Confine The Quarks!
-
-### Known Future Content (not yet in app)
-
-| Content | Details |
-|---|---|
-| Series II | 12 new characters, 6 new scenarios |
-| Series III | 4 new characters, 2 new scenarios |
-| Captain Crag | Fan-voted PNP Arcade promo character, compatible with any series |
-| Droid Assistants | 3 cards adding a third character element to any scenario |
-| SYZYGY Mode (S1) | Campaign mode — pay off debt to the Grosksh across linked scenarios |
-| SYZYGY: Waypoints (S2) | Series II campaign mode, distinct from Series I SYZYGY |
+Short-lived notification banners that appear at the bottom-center of the screen and auto-dismiss after ~2.6 seconds. Two styles: `info` (teal) and `error` (red). Used for: record saved, export success, import results, validation errors, clear confirmation.
 
 ---
 
 ## Data Model
 
-Each saved record is stored as:
+### Record
 
-```
+Each saved play session is stored as:
+
+```json
 {
-  characters: [string, string],  // Two unique characters, sorted alphabetically
-  scenario:   string,
-  result:     "Win" | "Loss",
-  difficulty: "Easy" | "Medium" | "Hard",
-  playtime:   number | null,     // Elapsed seconds. null/absent on pre-timer records
-  timestamp:  string             // Human-readable local date/time string
+  "characters": ["CharA", "CharB"],
+  "scenario":   "Scenario Name!",
+  "result":     "Win",
+  "difficulty": "Medium",
+  "playtime":   847,
+  "timestamp":  "3/19/2026, 9:14:00 PM"
 }
 ```
 
-All records are stored as a JSON array in the browser's `localStorage` under the key `"gameRecords"`. Nothing is ever sent anywhere.
+| Field | Type | Notes |
+|---|---|---|
+| `characters` | `[string, string]` | Always two, always sorted alphabetically |
+| `scenario` | `string` | Must be a known scenario name |
+| `result` | `"Win" \| "Loss"` | |
+| `difficulty` | `"Easy" \| "Medium" \| "Hard"` | |
+| `playtime` | `number \| null` | Elapsed seconds. `null` or absent on old pre-timer records |
+| `timestamp` | `string` | `new Date().toLocaleString()` — human-readable, not ISO |
+
+### localStorage Keys
+
+| Key | Value | Notes |
+|---|---|---|
+| `"gameRecords"` | JSON array of records | All saved play sessions |
+| `"enabledPacks"` | JSON array of pack ID strings | e.g. `["series1","series2"]` |
+| `"lastResult"` | `"Win"` or `"Loss"` | Pre-selects result dropdown on next save |
+| `"lastDifficulty"` | `"Easy"`, `"Medium"`, or `"Hard"` | Pre-selects difficulty dropdown on next save |
 
 ### Combo Key
 
-Combinations are identified internally by a string key:
+Combinations are identified by a string key used to look up records:
 ```
 [char1]|[char2]-[scenario]
 ```
-Characters are always sorted before building this key so the order they were selected doesn't matter. **Note:** When expansion content is added, new character/scenario names must be checked to ensure they don't contain `|` or `-` or the key logic will need updating.
+Characters are always sorted alphabetically before building this key. `|` and `-` are separators — if any future character or scenario name contains these characters, the key logic must be updated.
 
----
-
-## Technical Details
-
-- **Stack:** Plain HTML, CSS, vanilla JavaScript — no frameworks, no build tools
-- **Single file:** Everything is in one `.html` file. Open it directly in any browser.
-- **Storage:** `localStorage` only. Key: `"gameRecords"`. No data leaves the device.
-- **No accounts:** Single-user, local tool.
-- **Distribution:** Share the file directly. Works on desktop and mobile browsers.
-- **Security:** All rendered data is HTML-escaped. Imported records are validated against known-good values before being accepted. localStorage errors are caught gracefully.
+Example: `"Bood|Stag Solar-Escape The Brig!"`
 
 ---
 
@@ -201,6 +304,14 @@ Characters are always sorted before building this key so the order they were sel
 
 ---
 
+## Typography
+
+- **Headings / UI labels / buttons:** Orbitron (Google Fonts) — weights 400, 700, 900
+- **Body text / dropdowns / tables:** Exo 2 (Google Fonts) — weights 300, 400, 600
+- **Fallback:** system sans-serif if Google Fonts is unavailable
+
+---
+
 ## External Links
 
 | Label | URL |
@@ -211,80 +322,68 @@ Characters are always sorted before building this key so the order they were sel
 | Button Shy Discord | https://discord.gg/aUBMvnu |
 | Buy Twin Stars | https://buttonshygames.com/products/twin-stars |
 | Twin Stars BGG | https://boardgamegeek.com/boardgame/231854/twin-stars-adventure-series-i |
+| GitHub | https://github.com/jamescochran/jamescochran.github.io |
+
+---
+
+## Known Issues / Near-Term Fixes
+
+- **manifest.json `name` field** — still says "Twin Stars Adventure Series I Randomizer", needs updating to reflect multi-series support
+- **manifest.json icon `purpose`** — both icons use `"any maskable"` combined; should be two separate entries for correct platform rendering
 
 ---
 
 ## Roadmap
 
-### v1.1 — Font Self-Containment *(low priority — working fallback exists)*
-Embed Orbitron and Exo 2 as base64 directly in the HTML so the file works with perfect visuals even with no internet connection, ever. Currently deferred because the fallback notice is functional and embedding adds ~250KB to file size.
+### v1.3 — First-Run "My Collection" Tooltip
+On the very first load, show a tooltip or callout arrow pointing to the "My Collection" button, letting the user know that's where they select which games they own. Dismiss on tap/click or after opening the modal. Store a `"hasSeenCollectionTip"` flag in localStorage so it never shows again after being dismissed.
 
 ---
 
-### v1.3 — First-Run Tooltip on "My Collection"
-On the very first load, show a tooltip or callout arrow pointing to the "My Collection" button in the header, letting the user know that's where they select which games they own. Dismiss on tap/click or after interacting with the button. Store a flag in localStorage so it never shows again after being dismissed.
-
----
-
-### v1.2 — Light / Dark Mode *(high priority)*
+### v1.4 — Light / Dark Mode
 - Toggle between the current dark space theme and a light mode
 - Light mode should feel designed — a proper alternate palette, not just inverted colors
-- Defaults to the user's OS-level preference on first load
-- Choice saved to localStorage between sessions
+- Default to the user's OS-level preference (`prefers-color-scheme`) on first load
+- Save choice to localStorage
 
 ---
 
-### v2.0 — Content Toggles *(must ship before any new content is added)*
+### v2.0 — Additional Content Packs
+Content not yet in the app. Each should be added as its own pack in `CONTENT_PACKS`:
 
-A settings panel where you select which content you own. The randomizer and manual dropdowns only show content from enabled series. History and stats remain unified across everything.
-
-| Toggle | Notes |
+| Content | Details |
 |---|---|
-| Series I | Always on, default |
-| Series II | Off by default |
-| Series III | Off by default |
-| Captain Crag | Adds to active character pool when on |
-| Droid Assistants | Separate toggle — may need a new record field |
-| SYZYGY Mode (S1) | Off by default |
-| SYZYGY: Waypoints (S2) | Requires Series II enabled |
+| Scenario 13: Topple the Giant! | 1 scenario, 2 characters (names unknown — need physical card) |
+| Series I Droid Assistants | C.R.A.N.K., MC-CY, Domino 2-5 — adds a third-character mechanic |
+| Series II Droid Assistants | F1D0, T.R.IX, MANTIS — same mechanic as Series I droids |
+| SYZYGY Mode (Series I) | Campaign mode overlay — needs design work to determine record fields |
+| SYZYGY: Waypoints (Series II) | Campaign mode overlay — separate from Series I SYZYGY |
 
-Also: when expansion content is added, `isValidRecord()` in the JavaScript must be updated to include new character and scenario names or imported records from those series will be silently rejected.
-
----
-
-### v2.1 — Expansion Content *(requires v2.0)*
-- Series II data (characters confirmed; scenarios still need research)
-- Series III data (characters and scenarios need research)
-- SYZYGY Mode (Series I) — determine what record fields are needed
-- SYZYGY: Waypoints (Series II) — separate implementation
-- Droid Assistant tracking — determine how to record Droid usage
-- Captain Crag — add to character pool
+Note: Droid Assistants add a "third character" to any game, not a second — this requires new UI (a third optional slot) and a new record field to track which droid was used. Design needed before implementation.
 
 ---
 
 ### v3.0 — Record Keeping and Stats
-- Delete individual records
 - Edit individual records (fix a wrong result or difficulty)
 - Optional notes field per record
 - Sort and filter the history table
 - Win rate per combination
-- Completion tracking — how many of all possible combinations have been played
-- Completion grid or visual checklist (396 combos in Series I alone — this will be compelling)
+- Completion grid — visual checklist of all possible combinations (will be compelling at 396+ combos)
 - "Suggest an unplayed combination" — weighted random that favors what you haven't tried
 
 ---
 
 ### v4.0 — Sharing and Convenience
-- Shareable combination codes — a short string someone else can paste in to load the same combo
+- Shareable combination codes — a short string someone else can paste to load the same combo
 - Printable / human-readable export (not just raw JSON)
 - Favorite or flag combinations to revisit
 - Remember the last loaded combination when reopening the app
 - "Play again" shortcut after saving a record
+- Import merge — combine two record sets rather than replace one with the other
 
 ---
 
 ### Future / Unscheduled
 - Community leaderboard or shared win rates (needs a backend — major scope change)
-- Cloud sync across devices (also needs a backend)
+- Cloud sync across devices (needs a backend)
 - Two-player companion mode — both players tracking simultaneously
-- Import merge — combine two record sets rather than replace one with the other
