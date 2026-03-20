@@ -923,7 +923,7 @@
     <p class="footer-disclaimer">
       Twin Stars Adventure Series is designed by Jason Tagmire &amp; Mike Mullins and published by Button Shy Games. All characters, scenarios, and game content are the intellectual property of Button Shy Games and their creators. This is an unofficial, free, fan-made companion app made out of love for an incredible game — not affiliated with or endorsed by Button Shy Games. If you don't own Twin Stars yet, please go buy it. It's worth every penny.
     </p>
-    <p style="font-size:10px;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">v1.1.5</p>
+    <p style="font-size:10px;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">v1.1.6</p>
   </footer>
 
 </div>
@@ -1035,8 +1035,8 @@
   }
 
   // Safely escape any string before inserting it into HTML.
-  // This prevents "XSS" attacks — if a malicious imported file contained something like
-  // <script>alert("hacked")</script> as a character name, this function turns the angle
+  // This prevents "XSS" attacks — if a malicious imported file contained a character name
+  // with raw HTML tags like a script injection attempt, this function turns the angle
   // brackets into harmless text so the browser never runs it as code.
   // We reuse one hidden div element instead of creating a new one every time (minor performance win).
   const _escEl = document.createElement("div");
