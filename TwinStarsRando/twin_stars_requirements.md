@@ -18,7 +18,7 @@ Unprioritized. Not all items will ship. This is a living document.
 
 ## Settings / Content Toggles
 
-- Settings screen where the user selects which content they own
+- ~~Settings screen where the user selects which content they own~~ ✅ Done
 - ~~Toggle Series I on/off~~ ✅ Done
 - ~~Toggle Series II on/off~~ ✅ Done
 - ~~Toggle Scenario 14 on/off~~ ✅ Done
@@ -26,7 +26,7 @@ Unprioritized. Not all items will ship. This is a living document.
 - Toggle Droid Assistants on/off (requires new UI design first)
 - Toggle SYZYGY Mode on/off
 - Toggle SYZYGY: Waypoints on/off (requires Series II enabled)
-- Content selection persists to localStorage between sessions
+- ~~Content selection persists to localStorage between sessions~~ ✅ Done
 - Randomizer and manual selection only pull from enabled content
 
 ---

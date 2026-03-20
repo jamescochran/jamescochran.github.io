@@ -1,6 +1,6 @@
 # Twin Stars Randomizer — Security & Risk Document
 
-**Applies to: v1.3.5+**
+**Applies to: v1.3.6+**
 **Audience: Developers maintaining or extending this codebase**
 
 ---

@@ -69,7 +69,7 @@ The app is installable as a Progressive Web App on mobile and desktop.
 - `background_color` / `theme_color`: `#07091a`
 - Icons: 192×192 and 512×512 PNG, each with separate `"any"` and `"maskable"` purpose entries
 
-**service-worker.js** — caches all app assets on install so the app shell loads instantly. Uses a cache-first strategy. The cache name is tied to the app version (e.g. `"twin-stars-v1.3.5"`) — **this must be updated with every deployment** or PWA users will receive stale content.
+**service-worker.js** — caches all app assets on install so the app shell loads instantly. Uses a cache-first strategy. The cache name is tied to the app version (e.g. `"twin-stars-v1.3.6"`) — **this must be updated with every deployment** or PWA users will receive stale content.
 
 ---
 
@@ -391,6 +391,18 @@ UI approach: a small lock icon or toggle next to each slot on the combination ca
 - Remember the last loaded combination when reopening the app
 - "Play again" shortcut after saving a record
 - Import merge — combine two record sets rather than replace one with the other
+
+---
+
+### v4.1 — Accessibility
+- All interactive elements keyboard navigable (tab order, Enter/Space activation)
+- Screen reader friendly — `aria-label` on icon-only buttons, `role` on custom controls
+- Focus indicators visible in both light and dark themes
+
+---
+
+### v4.2 — App Icon Refresh
+The current icon is a placeholder. Replace with a hand-designed or illustrated icon that matches the space/sci-fi tone of the app. Both 192×192 and 512×512 versions required. The 512px version must be safe for maskable use (important content within the inner 80% safe zone).
 
 ---
 
