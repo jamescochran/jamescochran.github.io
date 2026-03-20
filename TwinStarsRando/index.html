@@ -30,6 +30,22 @@
       --loss-color:   #ff4455;
     }
 
+    /* Light mode overrides — same space-computer feel, brighter environment */
+    [data-theme="light"] {
+      --bg-deep:      #f0f2fb;
+      --bg-panel:     #e4e8f8;
+      --bg-card:      #dce0f4;
+      --border:       #b8c4e0;
+      --border-glow:  #7890cc;
+      --accent-teal:  #008f74;
+      --text-primary: #0b0f28;
+      --text-muted:   #2a3868;
+      --text-dim:     #7888b8;
+      --loss-color:   #c8001e;
+    }
+    /* Hide the dark starfield background in light mode */
+    [data-theme="light"] body::before { display: none; }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -656,33 +672,101 @@
       max-width: 560px;
     }
 
-    /* My Collection button */
+    /* Header action buttons (My Collection, theme toggle, info) */
     .app-header { position: relative; }
-    .btn-settings {
+    .header-actions {
       position: absolute;
       top: 0; right: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-settings, .btn-theme, .btn-info {
       background: none;
       border: 1px solid var(--border);
       border-radius: 6px;
       color: var(--text-dim);
+      cursor: pointer;
+      line-height: 1;
+      transition: color 0.15s, border-color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-settings:hover, .btn-theme:hover, .btn-info:hover {
+      color: var(--accent-teal);
+      border-color: var(--accent-teal);
+    }
+    .btn-settings {
       font-family: 'Orbitron', sans-serif;
       font-size: 8px;
       font-weight: 700;
       letter-spacing: 1px;
       text-transform: uppercase;
-      cursor: pointer;
       padding: 5px 8px;
-      line-height: 1;
-      transition: color 0.15s, border-color 0.15s;
-      -webkit-tap-highlight-color: transparent;
     }
-    .btn-settings:hover { color: var(--accent-teal); border-color: var(--accent-teal); }
+    .btn-theme {
+      padding: 5px 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-info {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 7px;
+    }
     .active-packs-label {
       font-size: 10px;
       color: var(--text-dim);
       letter-spacing: 1px;
       margin-top: 10px;
       min-height: 14px;
+    }
+    /* Onboarding tooltip */
+    .onboarding-tip {
+      position: absolute;
+      top: 36px; right: 0;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-glow);
+      border-radius: 10px;
+      padding: 14px 16px 12px;
+      width: 248px;
+      z-index: 100;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+      text-align: left;
+    }
+    .onboarding-tip::before {
+      content: '';
+      position: absolute;
+      top: -6px; right: 18px;
+      width: 10px; height: 10px;
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border-glow);
+      border-top: 1px solid var(--border-glow);
+      transform: rotate(45deg);
+    }
+    .onboarding-tip p {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    .onboarding-tip p:last-of-type { margin-bottom: 0; }
+    .onboarding-tip strong { color: var(--text-primary); }
+    .btn-tip-dismiss {
+      display: block;
+      width: 100%;
+      margin-top: 12px;
+      padding: 7px;
+      background: var(--accent-teal);
+      color: #07091a;
+      border: none;
+      border-radius: 6px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
     }
 
     /* Settings modal */
@@ -796,7 +880,16 @@
 <div class="app-shell">
 
   <header class="app-header">
-    <button class="btn-settings" id="settingsBtn">My Collection</button>
+    <div class="header-actions">
+      <button class="btn-info"     id="infoBtn"     title="Help">&#x24D8;</button>
+      <button class="btn-theme"    id="themeBtn"    title="Toggle theme"></button>
+      <button class="btn-settings" id="settingsBtn" title="My Collection">My Collection</button>
+    </div>
+    <div class="onboarding-tip hidden" id="onboardingTip">
+      <p><strong>My Collection</strong> — tell the app which Twin Stars games you own. Only your content gets randomized.</p>
+      <p><strong>&#9790; / &#9728;</strong> — switch between dark and light mode.</p>
+      <button class="btn-tip-dismiss" id="tipDismiss">Got it</button>
+    </div>
     <p class="author-label">Jason Tagmire &amp; Mike Mullins</p>
     <h1>Twin<br>Stars<br><span>Adventure</span><br><span class="sub">Randomizer</span></h1>
     <div class="header-rule"></div>
@@ -911,7 +1004,7 @@
     <p class="footer-disclaimer">
       Twin Stars Adventure Series is designed by Jason Tagmire &amp; Mike Mullins and published by Button Shy Games. All characters, scenarios, and game content are the intellectual property of Button Shy Games and their creators. This is an unofficial, free, fan-made companion app made out of love for an incredible game — not affiliated with or endorsed by Button Shy Games. If you don't own Twin Stars yet, please go buy it. It's worth every penny.
     </p>
-    <p style="font-size:10px;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">v1.2.0</p>
+    <p style="font-size:10px;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">v1.3.0</p>
   </footer>
 
 </div>
@@ -986,6 +1079,56 @@
   // Sets of valid values used to sanity-check imported records.
   const VALID_RESULTS      = new Set(["Win", "Loss"]);
   const VALID_DIFFICULTIES = new Set(["Easy", "Medium", "Hard"]);
+
+  // ─── Theme ──────────────────────────────────────────────────────────────────
+
+  // SVG icons for the theme toggle button
+  const MOON_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  const SUN_SVG  = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/></svg>';
+
+  // Determine the starting theme: use saved preference, or fall back to OS setting.
+  function getInitialTheme() {
+    try {
+      const saved = localStorage.getItem("theme");
+      if (saved === "light" || saved === "dark") return saved;
+    } catch(e) {}
+    return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  }
+
+  // Apply a theme by setting data-theme on <html> and updating the toggle button icon.
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    const btn = document.getElementById("themeBtn");
+    // In dark mode show the moon (you're in dark, click to go light).
+    // In light mode show the sun (you're in light, click to go dark).
+    if (btn) btn.innerHTML = theme === "dark" ? MOON_SVG : SUN_SVG;
+    try { localStorage.setItem("theme", theme); } catch(e) {}
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    applyTheme(current === "dark" ? "light" : "dark");
+  }
+
+  // Apply theme immediately — before anything else renders — to avoid a flash of wrong theme.
+  applyTheme(getInitialTheme());
+
+  // ─── Onboarding tip ─────────────────────────────────────────────────────────
+
+  // Show the tip if the user has never dismissed it before.
+  function initOnboardingTip() {
+    try { if (localStorage.getItem("hasSeenTip")) return; } catch(e) { return; }
+    document.getElementById("onboardingTip").classList.remove("hidden");
+  }
+
+  function dismissTip() {
+    document.getElementById("onboardingTip").classList.add("hidden");
+    try { localStorage.setItem("hasSeenTip", "1"); } catch(e) {}
+  }
+
+  function showTip() {
+    document.getElementById("onboardingTip").classList.remove("hidden");
+  }
 
   // ─── Storage ────────────────────────────────────────────────────────────────
 
@@ -1603,6 +1746,9 @@
   document.getElementById("settingsModal")  .addEventListener("click", e => { if (e.target === e.currentTarget) closeSettings(); });
   document.getElementById("manualChar1")    .addEventListener("change", () => syncDropdown("manualChar1", "manualChar2"));
   document.getElementById("manualChar2")    .addEventListener("change", () => syncDropdown("manualChar2", "manualChar1"));
+  document.getElementById("themeBtn")       .addEventListener("click", toggleTheme);
+  document.getElementById("infoBtn")        .addEventListener("click", showTip);
+  document.getElementById("tipDismiss")     .addEventListener("click", dismissTip);
 
   // Restore last used result and difficulty
   try {
@@ -1614,6 +1760,7 @@
 
   buildActiveContent();
   populateSelectors();
+  initOnboardingTip();
 
   // Register service worker for PWA installation
   if ("serviceWorker" in navigator) {
