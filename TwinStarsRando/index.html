@@ -1199,40 +1199,95 @@
   }
 
 
-  // ─── Timer ──────────────────────────────────────────────────────────────────
+// ─── Timer ──────────────────────────────────────────────────────────────────
 
-  let timerSeconds  = 0;     // how many seconds have elapsed in the current session
-  let timerInterval = null;  // holds the reference to the repeating interval so we can stop it later
-  let timerPaused   = false; // whether the timer is currently paused
+// Total elapsed time in seconds (used for display)
+let timerSeconds = 0;
 
-  // Start the timer from zero. If one is already running, stop it first.
-  // setInterval calls the function inside every 1000 milliseconds (1 second).
-  function startTimer() {
-    stopTimer();
-    timerSeconds = 0;
-    timerPaused  = false;
-    timerInterval = setInterval(() => {
-      if (!timerPaused) {
-        timerSeconds++;
-        const el = document.getElementById("timerDisplay");
-        if (el) el.textContent = formatTime(timerSeconds);
-      }
-    }, 1000);
+// Reference to the interval so we can stop it
+let timerInterval = null;
+
+// Whether the timer is paused
+let timerPaused = false;
+
+// Timestamp when the timer was started (or resumed)
+let startTime = null;
+
+// Total time already elapsed before a pause (in ms)
+let accumulatedTime = 0;
+
+
+// Start the timer from zero
+function startTimer() {
+  stopTimer(); // clear any existing timer
+
+  timerPaused = false;
+  accumulatedTime = 0; // reset stored time
+  startTime = Date.now(); // mark current start time
+
+  // Update every second (UI refresh, not actual time source)
+  timerInterval = setInterval(updateDisplay, 1000);
+}
+
+
+// Stop the timer completely
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+
+// Pause or resume the timer
+function togglePause() {
+  const btn = document.getElementById("pauseBtn");
+  const display = document.getElementById("timerDisplay");
+
+  if (!timerPaused) {
+    // PAUSING
+
+    timerPaused = true;
+
+    // Add time since last start to accumulated total
+    accumulatedTime += Date.now() - startTime;
+  } else {
+    // RESUMING
+
+    timerPaused = false;
+
+    // Reset start time so it continues from where it left off
+    startTime = Date.now();
   }
 
-  // Stop the timer and clear the interval so it stops firing.
-  function stopTimer() {
-    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  // Update button + style
+  if (btn) {
+    btn.textContent = timerPaused ? "Resume" : "Pause";
+    btn.classList.toggle("paused", timerPaused);
   }
 
-  // Flip the paused state and update the button label and display styling accordingly.
-  function togglePause() {
-    timerPaused = !timerPaused;
-    const btn     = document.getElementById("pauseBtn");
-    const display = document.getElementById("timerDisplay");
-    if (btn)     { btn.textContent = timerPaused ? "Resume" : "Pause"; btn.classList.toggle("paused", timerPaused); }
-    if (display) { display.classList.toggle("paused", timerPaused); }
+  if (display) {
+    display.classList.toggle("paused", timerPaused);
   }
+}
+
+
+// Update the displayed time
+function updateDisplay() {
+  if (timerPaused) return;
+
+  // Calculate total elapsed time:
+  // accumulated (before pause) + current run
+  const elapsedMs = accumulatedTime + (Date.now() - startTime);
+
+  // Convert to whole seconds
+  timerSeconds = Math.floor(elapsedMs / 1000);
+
+  const el = document.getElementById("timerDisplay");
+  if (el) {
+    el.textContent = formatTime(timerSeconds);
+  }
+}
 
   // ─── Dropdowns ──────────────────────────────────────────────────────────────
 
