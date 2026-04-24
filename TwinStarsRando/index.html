@@ -1108,9 +1108,9 @@
   function applyTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
     const btn = document.getElementById("themeBtn");
-    // In dark mode show the moon (you're in dark, click to go light).
-    // In light mode show the sun (you're in light, click to go dark).
-    if (btn) btn.innerHTML = theme === "dark" ? MOON_SVG : SUN_SVG;
+    // In dark mode show the sun (click to switch to light).
+    // In light mode show the moon (click to switch to dark).
+    if (btn) btn.innerHTML = theme === "dark" ? SUN_SVG : MOON_SVG;
     try { localStorage.setItem("theme", theme); } catch(e) {}
   }
 
