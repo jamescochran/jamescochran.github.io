@@ -320,6 +320,22 @@
     .diff-badge.win      .diff-dot { background: var(--accent-teal); }
     .diff-badge.loss     .diff-dot { background: var(--loss-color); }
 
+    /* Lock toggle buttons */
+    .btn-lock {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+      padding: 3px 5px;
+      transition: border-color 0.15s, background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+    }
+    .btn-lock:hover  { border-color: var(--accent-teal); }
+    .btn-lock.locked { border-color: var(--accent-orange); background: rgba(255,107,53,0.1); }
+
     /* Timer */
     .timer-row {
       display: flex;
@@ -913,16 +929,16 @@
       <p class="panel-title">Manual Selection</p>
       <div class="form-row-inline">
         <div class="form-row form-row-flush">
-          <label>Character 1</label>
+          <label style="display:flex;align-items:center;justify-content:space-between;">Character 1 <button class="btn-lock" id="lockChar1" title="Lock">🔓</button></label>
           <select id="manualChar1"></select>
         </div>
         <div class="form-row form-row-flush">
-          <label>Character 2</label>
+          <label style="display:flex;align-items:center;justify-content:space-between;">Character 2 <button class="btn-lock" id="lockChar2" title="Lock">🔓</button></label>
           <select id="manualChar2"></select>
         </div>
       </div>
       <div class="form-row form-row-top">
-        <label>Scenario</label>
+        <label style="display:flex;align-items:center;justify-content:space-between;">Scenario <button class="btn-lock" id="lockScenario" title="Lock">🔓</button></label>
         <select id="manualScenario"></select>
       </div>
       <button class="btn btn-load" id="loadManualCombo">Load Mission</button>
@@ -997,7 +1013,7 @@
     <p class="footer-disclaimer">
       Twin Stars Adventure Series is designed by Jason Tagmire &amp; Mike Mullins and published by Button Shy Games. All characters, scenarios, and game content are the intellectual property of Button Shy Games and their creators. This is an unofficial, free, fan-made companion app made out of love for an incredible game — not affiliated with or endorsed by Button Shy Games. If you don't own Twin Stars yet, please go buy it. It's worth every penny.
     </p>
-    <p style="font-size:10px;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">v1.3.6</p>
+    <p style="font-size:10px;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">2026-04-24</p>
   </footer>
 
 </div>
@@ -1359,6 +1375,20 @@ function updateDisplay() {
 
   let currentCombination = null;
 
+  const locks = { char1: false, char2: false, scenario: false };
+
+  function updateLockButtons() {
+    const btn1 = document.getElementById("lockChar1");
+    const btn2 = document.getElementById("lockChar2");
+    const btnSc = document.getElementById("lockScenario");
+    btn1.textContent = locks.char1    ? "🔒" : "🔓";
+    btn2.textContent = locks.char2    ? "🔒" : "🔓";
+    btnSc.textContent = locks.scenario ? "🔒" : "🔓";
+    btn1.classList.toggle("locked",  locks.char1);
+    btn2.classList.toggle("locked",  locks.char2);
+    btnSc.classList.toggle("locked", locks.scenario);
+  }
+
   function displayCombination(comb) {
     const key       = comboKey(comb);
     const playCount = records.filter(r => comboKey(r) === key).length;
@@ -1652,36 +1682,32 @@ function updateDisplay() {
     document.getElementById("manualShowBtn").classList.remove("visible");
   }
 
-  // Pick two random characters and a random scenario and preview them.
-  // Does NOT start the timer or reveal the Record Outcome panel — the user
-  // reviews the combo first and clicks "Load Mission" when ready to play.
+  // Randomize the unlocked dropdown slots — does NOT start a game.
+  // The user reviews the result and clicks Load Mission when ready to play.
   function handleGenerate() {
-    const shuffled = [...characters].sort(() => Math.random() - 0.5);
-    const comb = {
-      characters: shuffled.slice(0, 2).sort(),
-      scenario:   scenarios[Math.floor(Math.random() * scenarios.length)]
-    };
+    const c1El = document.getElementById("manualChar1");
+    const c2El = document.getElementById("manualChar2");
+    const scEl = document.getElementById("manualScenario");
 
-    currentCombination = comb;
-    displayCombination(comb);
-    displayComboHistory(comb);
+    if (!locks.char1 && !locks.char2) {
+      const shuffled = [...characters].sort(() => Math.random() - 0.5);
+      c1El.value = shuffled[0];
+      syncDropdown("manualChar1", "manualChar2");
+      c2El.value = shuffled[1];
+    } else if (locks.char1 && !locks.char2) {
+      const pool = characters.filter(c => c !== c1El.value);
+      syncDropdown("manualChar1", "manualChar2");
+      c2El.value = pool[Math.floor(Math.random() * pool.length)];
+    } else if (!locks.char1 && locks.char2) {
+      const pool = characters.filter(c => c !== c2El.value);
+      c1El.value = pool[Math.floor(Math.random() * pool.length)];
+      syncDropdown("manualChar1", "manualChar2");
+    }
+    // both locked — nothing changes
 
-    // Sync manual selectors so "Load Mission" picks up the previewed combo.
-    const c1 = document.getElementById("manualChar1");
-    const c2 = document.getElementById("manualChar2");
-    const sc = document.getElementById("manualScenario");
-    c1.value = comb.characters[0];
-    syncDropdown("manualChar1", "manualChar2");
-    c2.value = comb.characters[1];
-    sc.value = comb.scenario;
-
-    // Show manual panel so "Load Mission" is visible for review.
-    showManualPanel();
-
-    setTimeout(() => {
-      const el = document.getElementById("combinationDisplay");
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 80);
+    if (!locks.scenario) {
+      scEl.value = scenarios[Math.floor(Math.random() * scenarios.length)];
+    }
   }
 
   // Load the combination the user picked manually from the dropdowns.
@@ -1797,6 +1823,9 @@ function updateDisplay() {
 
   document.getElementById("generateBtn")    .addEventListener("click", handleGenerate);
   document.getElementById("manualShowBtn")  .addEventListener("click", showManualPanel);
+  document.getElementById("lockChar1")      .addEventListener("click", () => { locks.char1    = !locks.char1;    updateLockButtons(); });
+  document.getElementById("lockChar2")      .addEventListener("click", () => { locks.char2    = !locks.char2;    updateLockButtons(); });
+  document.getElementById("lockScenario")   .addEventListener("click", () => { locks.scenario = !locks.scenario; updateLockButtons(); });
   document.getElementById("loadManualCombo").addEventListener("click", handleLoadManualCombo);
   document.getElementById("saveRecordBtn")  .addEventListener("click", handleSaveRecord);
   document.getElementById("exportBtn")      .addEventListener("click", handleExport);
