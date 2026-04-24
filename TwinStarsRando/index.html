@@ -13,7 +13,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
-  </style>
   <style>
     :root {
       --bg-deep:      #07091a;
@@ -37,7 +36,8 @@
       --bg-card:      #dce0f4;
       --border:       #b8c4e0;
       --border-glow:  #7890cc;
-      --accent-teal:  #008f74;
+      --accent-teal:   #008f74;
+      --accent-yellow: #b07d00;
       --text-primary: #0b0f28;
       --text-muted:   #2a3868;
       --text-dim:     #7888b8;
@@ -85,7 +85,7 @@
     }
 
     /* Header */
-    .app-header { text-align: center; margin-bottom: 32px; padding-top: 44px; }
+    .app-header { text-align: center; margin-bottom: 32px; padding-top: 44px; position: relative; }
     .app-header .author-label {
       font-family: 'Orbitron', sans-serif;
       font-size: 10px;
@@ -512,28 +512,6 @@
       margin-bottom: 14px;
     }
 
-    /* + Manual Selection ghost button */
-    .btn-manual-show {
-      display: none;
-      width: 100%;
-      padding: 12px;
-      background: transparent;
-      border: 1px dashed var(--border-glow);
-      border-radius: 8px;
-      color: var(--text-dim);
-      font-family: 'Orbitron', sans-serif;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-bottom: 16px;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .btn-manual-show:hover { border-color: var(--accent-teal); color: var(--accent-teal); }
-    .btn-manual-show.visible { display: block; }
-
     /* Play count badge on combo card */
     .combo-play-count {
       display: inline-flex;
@@ -689,7 +667,6 @@
     }
 
     /* Header action buttons (My Collection, theme toggle, info) */
-    .app-header { position: relative; }
     .header-actions {
       position: absolute;
       top: 0; right: 0;
@@ -923,8 +900,6 @@
       </button>
     </div>
 
-    <button class="btn-manual-show" id="manualShowBtn">+ Manual Selection</button>
-
     <div class="panel" id="manualPanel">
       <p class="panel-title">Manual Selection</p>
       <div class="form-row-inline">
@@ -1070,32 +1045,20 @@
     }
   ];
 
-  // Build flat sets of every character and scenario across ALL packs.
-  // A Set is like an array but each value can only appear once, and checking
-  // "does this value exist?" is very fast. We use these for import validation
-  // so that records from any pack are accepted even if that pack isn't currently enabled.
-  // flatMap(p => p.characters) means: for each pack, grab its characters array,
-  // then flatten all those arrays into one big list.
   const ALL_CHARACTERS_SET = new Set(CONTENT_PACKS.flatMap(p => p.characters));
   const ALL_SCENARIOS_SET  = new Set(CONTENT_PACKS.flatMap(p => p.scenarios));
 
-  // These two arrays hold only the content the user has enabled right now.
-  // They start empty and get filled by buildActiveContent() on startup and
-  // whenever the user changes their collection settings.
   let characters = [];
   let scenarios  = [];
 
-  // Sets of valid values used to sanity-check imported records.
   const VALID_RESULTS      = new Set(["Win", "Loss"]);
   const VALID_DIFFICULTIES = new Set(["Easy", "Medium", "Hard"]);
 
   // ─── Theme ──────────────────────────────────────────────────────────────────
 
-  // SVG icons for the theme toggle button
   const MOON_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
   const SUN_SVG  = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/></svg>';
 
-  // Determine the starting theme: use saved preference, or fall back to OS setting.
   function getInitialTheme() {
     try {
       const saved = localStorage.getItem("theme");
@@ -1104,7 +1067,6 @@
     return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
   }
 
-  // Apply a theme by setting data-theme on <html> and updating the toggle button icon.
   function applyTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
     const btn = document.getElementById("themeBtn");
@@ -1119,11 +1081,9 @@
     applyTheme(current === "dark" ? "light" : "dark");
   }
 
-  // Apply theme immediately — before anything else renders — to avoid a flash of wrong theme.
   applyTheme(getInitialTheme());
 
   // ─── Onboarding tip ─────────────────────────────────────────────────────────
-
   function initOnboardingTip() {
     try { if (localStorage.getItem("hasSeenTip")) return; } catch(e) { return; }
     document.getElementById("onboardingTip").classList.remove("hidden");
@@ -1136,21 +1096,14 @@
 
   // ─── Storage ────────────────────────────────────────────────────────────────
 
-  // Load saved records from localStorage (the browser's built-in key/value storage).
-  // localStorage persists even after the tab is closed — it's how we remember your history.
-  // We wrap this in try/catch so that if the saved data is somehow corrupted,
-  // the app starts fresh instead of crashing with an error.
   let records = [];
   try {
     const raw = localStorage.getItem("gameRecords");
-    if (raw) records = JSON.parse(raw);  // JSON.parse converts the saved text back into a JS array
+    if (raw) records = JSON.parse(raw);
   } catch (e) {
     console.warn("Could not load saved records:", e);
   }
 
-  // Save the current records array back to localStorage.
-  // JSON.stringify converts the JS array into a text string that can be stored.
-  // Wrapped in try/catch because storage can fail if the browser is nearly full.
   function saveRecords() {
     try {
       localStorage.setItem("gameRecords", JSON.stringify(records));
@@ -1160,56 +1113,39 @@
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
-
-  // Build a unique string that identifies a specific combination of two characters + one scenario.
-  // We sort the characters first so "Bood & Stag Solar" and "Stag Solar & Bood" produce the same key —
-  // order shouldn't matter. The "|" and "-" are just separators so the parts don't blur together.
-  // Example result: "Bood|Stag Solar-Escape The Brig!"
   function comboKey(comb) {
     return comb.characters.slice().sort().join("|") + "-" + comb.scenario;
   }
 
-  // Safely escape any string before inserting it into HTML.
-  // This prevents "XSS" attacks — if a malicious imported file contained a character name
-  // with raw HTML tags like a script injection attempt, this function turns the angle
-  // brackets into harmless text so the browser never runs it as code.
-  // We reuse one hidden div element instead of creating a new one every time (minor performance win).
   const _escEl = document.createElement("div");
   function esc(str) {
-    _escEl.textContent = String(str);  // textContent sets text safely — no HTML interpretation
-    return _escEl.innerHTML;           // innerHTML reads it back as escaped HTML entities
+    _escEl.textContent = String(str);
+    return _escEl.innerHTML;
   }
 
-  // Convert a number of seconds into a MM:SS display string.
-  // padStart(2, "0") adds a leading zero if the number is only one digit (e.g. 9 → "09").
   function formatTime(secs) {
     const m = String(Math.floor(secs / 60)).padStart(2, "0");
     const s = String(secs % 60).padStart(2, "0");
     return m + ":" + s;
   }
 
-  // Show a small pop-up notification at the bottom of the screen that disappears after ~2.5 seconds.
-  // type can be "info" (teal) or "error" (red) — controls the CSS styling.
   function toast(msg, type) {
     const t = document.createElement("div");
     t.className = "toast " + (type || "info");
-    t.textContent = msg; // textContent is safe here — no risk of running injected code
+    t.textContent = msg;
     document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2600); // remove the element from the page after 2.6 seconds
+    setTimeout(() => t.remove(), 2600);
   }
 
-  // Check whether a single imported record has all the right fields with valid values.
-  // This runs on every record when the user imports a JSON file — anything that doesn't
-  // pass gets silently skipped so bad data can never corrupt the record store.
   function isValidRecord(r) {
     return (
       r && typeof r === "object" &&
       Array.isArray(r.characters) &&
       r.characters.length === 2 &&
-      r.characters.every(c => ALL_CHARACTERS_SET.has(c)) && // both characters must be real
-      ALL_SCENARIOS_SET.has(r.scenario) &&                  // scenario must be real
-      VALID_RESULTS.has(r.result) &&                        // must be "Win" or "Loss"
-      VALID_DIFFICULTIES.has(r.difficulty) &&               // must be "Easy", "Medium", or "Hard"
+      r.characters.every(c => ALL_CHARACTERS_SET.has(c)) &&
+      ALL_SCENARIOS_SET.has(r.scenario) &&
+      VALID_RESULTS.has(r.result) &&
+      VALID_DIFFICULTIES.has(r.difficulty) &&
       typeof r.timestamp === "string"
     );
   }
@@ -1217,36 +1153,20 @@
 
 // ─── Timer ──────────────────────────────────────────────────────────────────
 
-// Total elapsed time in seconds (used for display)
-let timerSeconds = 0;
-
-// Reference to the interval so we can stop it
-let timerInterval = null;
-
-// Whether the timer is paused
-let timerPaused = false;
-
-// Timestamp when the timer was started (or resumed)
-let startTime = null;
-
-// Total time already elapsed before a pause (in ms)
+let timerSeconds    = 0;
+let timerInterval   = null;
+let timerPaused     = false;
+let startTime       = null;
 let accumulatedTime = 0;
 
-
-// Start the timer from zero
 function startTimer() {
-  stopTimer(); // clear any existing timer
-
-  timerPaused = false;
-  accumulatedTime = 0; // reset stored time
-  startTime = Date.now(); // mark current start time
-
-  // Update every second (UI refresh, not actual time source)
-  timerInterval = setInterval(updateDisplay, 1000);
+  stopTimer();
+  timerPaused     = false;
+  accumulatedTime = 0;
+  startTime       = Date.now();
+  timerInterval   = setInterval(updateDisplay, 1000);
 }
 
-
-// Stop the timer completely
 function stopTimer() {
   if (timerInterval) {
     clearInterval(timerInterval);
@@ -1254,29 +1174,18 @@ function stopTimer() {
   }
 }
 
-
-// Pause or resume the timer
 function togglePause() {
   const btn = document.getElementById("pauseBtn");
   const display = document.getElementById("timerDisplay");
 
   if (!timerPaused) {
-    // PAUSING
-
     timerPaused = true;
-
-    // Add time since last start to accumulated total
     accumulatedTime += Date.now() - startTime;
   } else {
-    // RESUMING
-
     timerPaused = false;
-
-    // Reset start time so it continues from where it left off
     startTime = Date.now();
   }
 
-  // Update button + style
   if (btn) {
     btn.textContent = timerPaused ? "Resume" : "Pause";
     btn.classList.toggle("paused", timerPaused);
@@ -1288,15 +1197,9 @@ function togglePause() {
 }
 
 
-// Update the displayed time
 function updateDisplay() {
   if (timerPaused) return;
-
-  // Calculate total elapsed time:
-  // accumulated (before pause) + current run
   const elapsedMs = accumulatedTime + (Date.now() - startTime);
-
-  // Convert to whole seconds
   timerSeconds = Math.floor(elapsedMs / 1000);
 
   const el = document.getElementById("timerDisplay");
@@ -1306,11 +1209,6 @@ function updateDisplay() {
 }
 
   // ─── Dropdowns ──────────────────────────────────────────────────────────────
-
-  // Keep the two character dropdowns in sync so you can never pick the same character twice.
-  // Whenever one dropdown changes, this rebuilds the other to exclude the currently selected value.
-  // srcId is the dropdown that just changed; tgtId is the one to rebuild.
-  // We remember the previously selected value (prev) and restore it if it's still valid.
   function syncDropdown(srcId, tgtId) {
     const exclude = document.getElementById(srcId).value;
     const tgt     = document.getElementById(tgtId);
@@ -1322,12 +1220,9 @@ function updateDisplay() {
       opt.value = opt.textContent = char;
       tgt.appendChild(opt);
     });
-    if (prev && prev !== exclude) tgt.value = prev; // restore previous selection if still available
+    if (prev && prev !== exclude) tgt.value = prev;
   }
 
-  // Fill the Manual Selection dropdowns with the currently active characters and scenarios.
-  // Called once on startup and again any time the content pack selection changes.
-  // We clear the dropdowns first (innerHTML = "") so we don't end up with duplicates.
   function populateSelectors() {
     const c1 = document.getElementById("manualChar1");
     const sc = document.getElementById("manualScenario");
@@ -1343,19 +1238,13 @@ function updateDisplay() {
       opt.value = opt.textContent = s;
       sc.appendChild(opt);
     });
-    syncDropdown("manualChar1", "manualChar2"); // initialize Character 2 to exclude Character 1's default
+    syncDropdown("manualChar1", "manualChar2");
   }
 
   // ─── Difficulty status ──────────────────────────────────────────────────────
-
-  // For a given combination, return the play status at each difficulty level.
-  // Returns an array of three objects like: { diff: "Easy", state: "win" | "loss" | "unplayed" }
-  // "win" means you've won at least once at that difficulty.
-  // "loss" means you've played but never won.
-  // "unplayed" means you haven't tried this combo at that difficulty yet.
   function getDifficultyStatus(comb) {
-    const key         = comboKey(comb);
-    const comboRecs   = records.filter(r => comboKey(r) === key); // all records for this exact combo
+    const key       = comboKey(comb);
+    const comboRecs = records.filter(r => comboKey(r) === key);
     return ["Easy", "Medium", "Hard"].map(diff => {
       const filtered = comboRecs.filter(r => r.difficulty === diff);
       if (!filtered.length) return { diff, state: "unplayed" };
@@ -1363,8 +1252,6 @@ function updateDisplay() {
     });
   }
 
-  // Build the HTML for the three difficulty badge dots shown on the combination card.
-  // The CSS class ("win", "loss", or "unplayed") controls the dot color.
   function renderDiffBadges(comb) {
     return getDifficultyStatus(comb).map(({ diff, state }) =>
       `<div class="diff-badge ${state}"><div class="diff-dot"></div>${esc(diff)}</div>`
@@ -1464,12 +1351,7 @@ function updateDisplay() {
   function displayUnplayed() {
     const container = document.getElementById("unplayedContainer");
 
-    // Build a Set of combo keys for every record we have — fast lookup below.
     const playedKeys = new Set(records.map(r => comboKey(r)));
-
-    // Generate every possible unique pair of characters combined with every scenario.
-    // The j = i + 1 trick means we never pair a character with itself and never
-    // repeat the same pair in reverse (e.g. we get "Bood & Stag Solar" but not also "Stag Solar & Bood").
     const unplayed = [];
     for (let i = 0; i < characters.length; i++) {
       for (let j = i + 1; j < characters.length; j++) {
@@ -1564,9 +1446,6 @@ function updateDisplay() {
   }
 
   // ─── Content packs ──────────────────────────────────────────────────────────
-
-  // Load which content packs the user has enabled from localStorage.
-  // Defaults to just Series 1 if nothing has been saved yet.
   let enabledPacks;
   try {
     const raw = localStorage.getItem("enabledPacks");
@@ -1575,17 +1454,10 @@ function updateDisplay() {
     enabledPacks = new Set(["series1"]);
   }
 
-  // Persist the current set of enabled pack IDs to localStorage.
-  // We spread the Set into an array ([...enabledPacks]) because JSON.stringify
-  // can't serialize a Set directly — it needs a plain array.
   function saveEnabledPacks() {
     try { localStorage.setItem("enabledPacks", JSON.stringify([...enabledPacks])); } catch(e) {}
   }
 
-  // Rebuild the active characters and scenarios arrays from the enabled packs.
-  // Called on startup and whenever the user changes their collection settings.
-  // flatMap collects all characters/scenarios from every enabled pack into one flat list.
-  // Wrapping in new Set(...) removes any duplicates, then [...] converts it back to an array.
   function buildActiveContent() {
     const active = CONTENT_PACKS.filter(p => enabledPacks.has(p.id));
     characters = [...new Set(active.flatMap(p => p.characters))];
@@ -1648,7 +1520,6 @@ function updateDisplay() {
   }
 
   // ─── Actions ────────────────────────────────────────────────────────────────
-
   function loadCombination(comb) {
     currentCombination = comb;
     displayCombination(comb);
@@ -1665,25 +1536,12 @@ function updateDisplay() {
     c2.value = comb.characters[1];
     sc.value = comb.scenario;
 
-    // Smooth scroll to combo card on mobile
     setTimeout(() => {
       const el = document.getElementById("combinationDisplay");
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 80);
   }
 
-  function hideManualPanel() {
-    document.getElementById("manualPanel").classList.add("hidden");
-    document.getElementById("manualShowBtn").classList.add("visible");
-  }
-
-  function showManualPanel() {
-    document.getElementById("manualPanel").classList.remove("hidden");
-    document.getElementById("manualShowBtn").classList.remove("visible");
-  }
-
-  // Randomize the unlocked dropdown slots — does NOT start a game.
-  // The user reviews the result and clicks Load Mission when ready to play.
   function handleGenerate() {
     const c1El = document.getElementById("manualChar1");
     const c2El = document.getElementById("manualChar2");
@@ -1710,7 +1568,6 @@ function updateDisplay() {
     }
   }
 
-  // Load the combination the user picked manually from the dropdowns.
   function handleLoadManualCombo() {
     const char1    = document.getElementById("manualChar1").value;
     const char2    = document.getElementById("manualChar2").value;
@@ -1719,8 +1576,6 @@ function updateDisplay() {
     loadCombination({ characters: [char1, char2].sort(), scenario });
   }
 
-  // Save the outcome of the current session to the records array, then persist it.
-  // Stops the timer to capture the final elapsed time, then restarts it for the next play.
   function handleSaveRecord() {
     if (!currentCombination) return;
     const result     = document.getElementById("result").value;
@@ -1731,10 +1586,9 @@ function updateDisplay() {
       scenario:   currentCombination.scenario,
       result,
       difficulty,
-      playtime:   timerSeconds,
-      timestamp:  new Date().toLocaleString() // human-readable date/time string
+      playtime:  timerSeconds,
+      timestamp: new Date().toLocaleString()
     });
-    // Remember last used values so they're pre-selected next time
     try { localStorage.setItem("lastResult", result); localStorage.setItem("lastDifficulty", difficulty); } catch(e) {}
     saveRecords();
     displayCombination(currentCombination);
@@ -1743,12 +1597,9 @@ function updateDisplay() {
     toast("Record saved!");
   }
 
-  // Export all records as a downloadable JSON file.
-  // We create a temporary invisible link element, programmatically click it to trigger
-  // the download, then remove the element. revokeObjectURL cleans up the temporary URL.
   function handleExport() {
     if (!records.length) { toast("No records to export.", "error"); return; }
-    const date     = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD" for the filename
+    const date     = new Date().toISOString().slice(0, 10);
     const blob     = new Blob([JSON.stringify(records, null, 2)], { type: "application/json" });
     const url      = URL.createObjectURL(blob);
     const a        = document.createElement("a");
@@ -1761,9 +1612,6 @@ function updateDisplay() {
     toast("Exported successfully!");
   }
 
-  // When the user selects a file from the import picker, read it and load its records.
-  // FileReader reads the file contents asynchronously — the onload callback fires when done.
-  // We validate every record before accepting it so bad data can't corrupt the store.
   document.getElementById("importFile").addEventListener("change", function () {
     const file = this.files[0];
     if (!file) return;
@@ -1772,7 +1620,7 @@ function updateDisplay() {
       try {
         const parsed = JSON.parse(e.target.result);
         if (!Array.isArray(parsed)) { toast("Invalid file format.", "error"); return; }
-        const valid   = parsed.filter(isValidRecord); // keep only records that pass validation
+        const valid   = parsed.filter(isValidRecord);
         const skipped = parsed.length - valid.length;
         records = valid;
         saveRecords();
@@ -1820,9 +1668,7 @@ function updateDisplay() {
   }
 
   // ─── Init ───────────────────────────────────────────────────────────────────
-
   document.getElementById("generateBtn")    .addEventListener("click", handleGenerate);
-  document.getElementById("manualShowBtn")  .addEventListener("click", showManualPanel);
   document.getElementById("lockChar1")      .addEventListener("click", () => { locks.char1    = !locks.char1;    updateLockButtons(); });
   document.getElementById("lockChar2")      .addEventListener("click", () => { locks.char2    = !locks.char2;    updateLockButtons(); });
   document.getElementById("lockScenario")   .addEventListener("click", () => { locks.scenario = !locks.scenario; updateLockButtons(); });
@@ -1839,7 +1685,6 @@ function updateDisplay() {
   document.getElementById("themeBtn")       .addEventListener("click", toggleTheme);
   document.getElementById("tipDismiss")     .addEventListener("click", dismissTip);
 
-  // Restore last used result and difficulty
   try {
     const lastResult     = localStorage.getItem("lastResult");
     const lastDifficulty = localStorage.getItem("lastDifficulty");
@@ -1851,7 +1696,6 @@ function updateDisplay() {
   populateSelectors();
   initOnboardingTip();
 
-  // Register service worker for PWA installation
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("service-worker.js").catch(() => {});
