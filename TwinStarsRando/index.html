@@ -1652,18 +1652,36 @@ function updateDisplay() {
     document.getElementById("manualShowBtn").classList.remove("visible");
   }
 
-  // Pick two random characters and a random scenario and load them.
-  // The shuffle trick: sort with a comparator that randomly returns negative or positive,
-  // which scrambles the array. We then take the first two results.
-  // The second .sort() on characters ensures the pair is stored alphabetically,
-  // matching how comboKey() expects them.
+  // Pick two random characters and a random scenario and preview them.
+  // Does NOT start the timer or reveal the Record Outcome panel — the user
+  // reviews the combo first and clicks "Load Mission" when ready to play.
   function handleGenerate() {
     const shuffled = [...characters].sort(() => Math.random() - 0.5);
-    loadCombination({
+    const comb = {
       characters: shuffled.slice(0, 2).sort(),
       scenario:   scenarios[Math.floor(Math.random() * scenarios.length)]
-    });
-    hideManualPanel();
+    };
+
+    currentCombination = comb;
+    displayCombination(comb);
+    displayComboHistory(comb);
+
+    // Sync manual selectors so "Load Mission" picks up the previewed combo.
+    const c1 = document.getElementById("manualChar1");
+    const c2 = document.getElementById("manualChar2");
+    const sc = document.getElementById("manualScenario");
+    c1.value = comb.characters[0];
+    syncDropdown("manualChar1", "manualChar2");
+    c2.value = comb.characters[1];
+    sc.value = comb.scenario;
+
+    // Show manual panel so "Load Mission" is visible for review.
+    showManualPanel();
+
+    setTimeout(() => {
+      const el = document.getElementById("combinationDisplay");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
   }
 
   // Load the combination the user picked manually from the dropdowns.
